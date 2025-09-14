@@ -1,5 +1,6 @@
 package com.luxevista.resort.activities;
 
+import android.app.DatePickerDialog;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -18,8 +19,11 @@ import com.luxevista.resort.database.DatabaseHelper;
 import com.luxevista.resort.models.Reservation;
 import com.luxevista.resort.models.Service;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
+import java.util.Locale;
 
 public class ServiceReservationActivity extends AppCompatActivity {
     
@@ -31,6 +35,8 @@ public class ServiceReservationActivity extends AppCompatActivity {
     private SharedPreferences sharedPreferences;
     private List<Service> availableServices;
     private Service selectedService;
+    private Calendar calendar;
+    private SimpleDateFormat dateFormat;
     
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,6 +46,7 @@ public class ServiceReservationActivity extends AppCompatActivity {
         initializeViews();
         initializeDatabase();
         initializeSharedPreferences();
+        initializeCalendar();
         setupRecyclerView();
         loadAvailableServices();
         setupClickListeners();
@@ -57,6 +64,11 @@ public class ServiceReservationActivity extends AppCompatActivity {
     
     private void initializeSharedPreferences() {
         sharedPreferences = getSharedPreferences("user_session", MODE_PRIVATE);
+    }
+    
+    private void initializeCalendar() {
+        calendar = Calendar.getInstance();
+        dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
     }
     
     private void setupRecyclerView() {
@@ -93,6 +105,13 @@ public class ServiceReservationActivity extends AppCompatActivity {
                 reserveService();
             }
         });
+        
+        etReservationDate.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showDatePickerDialog(etReservationDate, "Select Reservation Date");
+            }
+        });
     }
     
     private void reserveService() {
@@ -122,5 +141,31 @@ public class ServiceReservationActivity extends AppCompatActivity {
             return false;
         }
         return true;
+    }
+    
+    private void showDatePickerDialog(EditText editText, String title) {
+        DatePickerDialog.OnDateSetListener dateSetListener = new DatePickerDialog.OnDateSetListener() {
+            @Override
+            public void onDateSet(android.widget.DatePicker view, int year, int month, int dayOfMonth) {
+                calendar.set(Calendar.YEAR, year);
+                calendar.set(Calendar.MONTH, month);
+                calendar.set(Calendar.DAY_OF_MONTH, dayOfMonth);
+                editText.setText(dateFormat.format(calendar.getTime()));
+            }
+        };
+        
+        DatePickerDialog datePickerDialog = new DatePickerDialog(
+            this,
+            dateSetListener,
+            calendar.get(Calendar.YEAR),
+            calendar.get(Calendar.MONTH),
+            calendar.get(Calendar.DAY_OF_MONTH)
+        );
+        
+        // Set minimum date to today
+        datePickerDialog.getDatePicker().setMinDate(System.currentTimeMillis() - 1000);
+        
+        datePickerDialog.setTitle(title);
+        datePickerDialog.show();
     }
 }

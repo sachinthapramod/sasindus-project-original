@@ -4,48 +4,104 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_margin="8dp"
-    app:cardCornerRadius="8dp"
-    app:cardElevation="4dp">
+    app:cardCornerRadius="12dp"
+    app:cardElevation="6dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="16dp">
+        android:orientation="vertical">
 
-        <TextView
-            android:id="@+id/tvServiceName"
+        <!-- Service Image -->
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="200dp">
+
+            <ImageView
+                android:id="@+id/ivServiceImage"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:src="@drawable/spa"
+                android:scaleType="centerCrop" />
+
+            <!-- Dark overlay for better text readability -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="#20000000" />
+
+            <!-- Service Name Badge -->
+            <TextView
+                android:id="@+id/tvServiceName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="top|start"
+                android:layout_margin="12dp"
+                android:background="@drawable/service_name_badge"
+                android:padding="8dp"
+                android:text="Service Name"
+                android:textColor="@android:color/white"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <!-- Price Badge -->
+            <TextView
+                android:id="@+id/tvServicePrice"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="top|end"
+                android:layout_margin="12dp"
+                android:background="@drawable/price_badge"
+                android:padding="8dp"
+                android:text="$0.00"
+                android:textColor="@android:color/white"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+        </FrameLayout>
+
+        <!-- Service Details -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Service Name"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:textColor="@color/primary_color" />
+            android:orientation="vertical"
+            android:padding="16dp">
 
-        <TextView
-            android:id="@+id/tvServiceDescription"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Service Description"
-            android:textSize="14sp"
-            android:layout_marginTop="4dp" />
+            <TextView
+                android:id="@+id/tvServiceDescription"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Relaxing spa service with premium treatments"
+                android:textSize="14sp"
+                android:textColor="@color/on_surface"
+                android:layout_marginBottom="8dp" />
 
-        <TextView
-            android:id="@+id/tvServicePrice"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="$0.00"
-            android:textSize="16sp"
-            android:layout_marginTop="4dp" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
 
-        <TextView
-            android:id="@+id/tvAvailability"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Available"
-            android:textSize="14sp"
-            android:textColor="@color/success_color"
-            android:layout_marginTop="4dp" />
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Availability:"
+                    android:textSize="14sp"
+                    android:textColor="@color/on_surface" />
+
+                <TextView
+                    android:id="@+id/tvAvailability"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Available"
+                    android:textSize="14sp"
+                    android:textColor="@color/success_color"
+                    android:textStyle="bold" />
+
+            </LinearLayout>
+
+        </LinearLayout>
 
     </LinearLayout>
 

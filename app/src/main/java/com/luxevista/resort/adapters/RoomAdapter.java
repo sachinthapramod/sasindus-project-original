@@ -51,13 +51,14 @@ public class RoomAdapter extends RecyclerView.Adapter<RoomAdapter.RoomViewHolder
     }
     
     class RoomViewHolder extends RecyclerView.ViewHolder {
-        private TextView tvRoomType, tvRoomPrice, tvAvailability;
+        private TextView tvRoomType, tvRoomPrice, tvAvailability, tvRoomDescription;
         
         public RoomViewHolder(@NonNull View itemView) {
             super(itemView);
             tvRoomType = itemView.findViewById(R.id.tvRoomType);
             tvRoomPrice = itemView.findViewById(R.id.tvRoomPrice);
             tvAvailability = itemView.findViewById(R.id.tvAvailability);
+            tvRoomDescription = itemView.findViewById(R.id.tvRoomDescription);
             
             itemView.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -76,6 +77,25 @@ public class RoomAdapter extends RecyclerView.Adapter<RoomAdapter.RoomViewHolder
             tvRoomType.setText(room.getRoomType());
             tvRoomPrice.setText("$" + String.format("%.2f", room.getPrice()));
             tvAvailability.setText(room.isAvailable() ? "Available" : "Not Available");
+            
+            // Set room description based on room type
+            String description = getRoomDescription(room.getRoomType());
+            tvRoomDescription.setText(description);
+        }
+        
+        private String getRoomDescription(String roomType) {
+            switch (roomType.toLowerCase()) {
+                case "deluxe":
+                    return "Spacious deluxe room with premium amenities and city view";
+                case "suite":
+                    return "Luxurious suite with separate living area and premium services";
+                case "standard":
+                    return "Comfortable standard room with modern amenities";
+                case "presidential":
+                    return "Exclusive presidential suite with panoramic views and butler service";
+                default:
+                    return "Luxurious room with modern amenities and excellent service";
+            }
         }
     }
 }

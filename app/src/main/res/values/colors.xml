@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Hotelux-inspired luxury palette: Navy + Gold -->
+    <color name="primary_color">#0B1D3A</color>
+    <color name="primary_dark">#09162C</color>
+    <color name="accent_color">#D4AF37</color>
+    <color name="secondary_color">#8A8F9F</color>
+    <color name="background_color">#0F1E33</color>
+    <color name="surface_color">#152641</color>
+    <color name="on_primary">#FFFFFF</color>
+    <color name="on_background">#E6EAF2</color>
+    <color name="on_surface">#E6EAF2</color>
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+    <color name="success_color">#4CAF50</color>
+    <color name="error_color">#F44336</color>
+    <color name="warning_color">#FF9800</color>
+</resources>

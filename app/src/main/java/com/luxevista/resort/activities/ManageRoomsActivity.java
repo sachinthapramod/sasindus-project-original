@@ -1,5 +1,6 @@
 package com.luxevista.resort.activities;
 
+import android.app.AlertDialog;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.View;
@@ -12,7 +13,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.luxevista.resort.R;
-import com.luxevista.resort.adapters.RoomAdapter;
+import com.luxevista.resort.adapters.AdminRoomAdapter;
 import com.luxevista.resort.database.DatabaseHelper;
 import com.luxevista.resort.models.Room;
 
@@ -21,11 +22,12 @@ import java.util.List;
 public class ManageRoomsActivity extends AppCompatActivity {
     
     private RecyclerView recyclerViewRooms;
-    private RoomAdapter roomAdapter;
+    private AdminRoomAdapter roomAdapter;
     private EditText etRoomType, etRoomPrice;
     private Button btnAddRoom, btnBack;
     private DatabaseHelper databaseHelper;
     private List<Room> rooms;
+    private Room editingRoom;
     
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,11 +54,15 @@ public class ManageRoomsActivity extends AppCompatActivity {
     }
     
     private void setupRecyclerView() {
-        roomAdapter = new RoomAdapter(rooms, new RoomAdapter.OnRoomClickListener() {
+        roomAdapter = new AdminRoomAdapter(rooms, new AdminRoomAdapter.OnRoomActionListener() {
             @Override
-            public void onRoomClick(Room room) {
-                // For admin, we can implement edit/delete functionality here
-                Toast.makeText(ManageRoomsActivity.this, "Room: " + room.getRoomType(), Toast.LENGTH_SHORT).show();
+            public void onEditRoom(Room room) {
+                editRoom(room);
+            }
+            
+            @Override
+            public void onDeleteRoom(Room room) {
+                deleteRoom(room);
             }
         });
         
@@ -91,15 +97,30 @@ public class ManageRoomsActivity extends AppCompatActivity {
         
         if (validateRoomInput(roomType, priceText)) {
             double price = Double.parseDouble(priceText);
-            Room room = new Room(roomType, price, 1);
             
-            if (databaseHelper.addRoom(room)) {
-                Toast.makeText(this, "Room added successfully!", Toast.LENGTH_SHORT).show();
-                etRoomType.setText("");
-                etRoomPrice.setText("");
-                loadRooms();
+            if (editingRoom != null) {
+                // Update existing room
+                editingRoom.setRoomType(roomType);
+                editingRoom.setPrice(price);
+                
+                if (databaseHelper.updateRoom(editingRoom)) {
+                    Toast.makeText(this, "Room updated successfully!", Toast.LENGTH_SHORT).show();
+                    clearForm();
+                    loadRooms();
+                } else {
+                    Toast.makeText(this, "Failed to update room. Please try again.", Toast.LENGTH_SHORT).show();
+                }
             } else {
-                Toast.makeText(this, "Failed to add room. Please try again.", Toast.LENGTH_SHORT).show();
+                // Add new room
+                Room room = new Room(roomType, price, 1);
+                
+                if (databaseHelper.addRoom(room)) {
+                    Toast.makeText(this, "Room added successfully!", Toast.LENGTH_SHORT).show();
+                    clearForm();
+                    loadRooms();
+                } else {
+                    Toast.makeText(this, "Failed to add room. Please try again.", Toast.LENGTH_SHORT).show();
+                }
             }
         }
     }
@@ -129,5 +150,35 @@ public class ManageRoomsActivity extends AppCompatActivity {
         }
         
         return isValid;
+    }
+    
+    private void editRoom(Room room) {
+        editingRoom = room;
+        etRoomType.setText(room.getRoomType());
+        etRoomPrice.setText(String.valueOf(room.getPrice()));
+        btnAddRoom.setText("Update Room");
+    }
+    
+    private void deleteRoom(Room room) {
+        new AlertDialog.Builder(this)
+            .setTitle("Delete Room")
+            .setMessage("Are you sure you want to delete this room?")
+            .setPositiveButton("Delete", (dialog, which) -> {
+                if (databaseHelper.deleteRoom(room.getId())) {
+                    Toast.makeText(this, "Room deleted successfully!", Toast.LENGTH_SHORT).show();
+                    loadRooms();
+                } else {
+                    Toast.makeText(this, "Failed to delete room. Please try again.", Toast.LENGTH_SHORT).show();
+                }
+            })
+            .setNegativeButton("Cancel", null)
+            .show();
+    }
+    
+    private void clearForm() {
+        etRoomType.setText("");
+        etRoomPrice.setText("");
+        btnAddRoom.setText("Add Room");
+        editingRoom = null;
     }
 }

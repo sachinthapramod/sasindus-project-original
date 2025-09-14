@@ -1,5 +1,6 @@
 package com.luxevista.resort.activities;
 
+import android.app.AlertDialog;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.View;
@@ -12,7 +13,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.luxevista.resort.R;
-import com.luxevista.resort.adapters.ServiceAdapter;
+import com.luxevista.resort.adapters.AdminServiceAdapter;
 import com.luxevista.resort.database.DatabaseHelper;
 import com.luxevista.resort.models.Service;
 
@@ -21,11 +22,12 @@ import java.util.List;
 public class ManageServicesActivity extends AppCompatActivity {
     
     private RecyclerView recyclerViewServices;
-    private ServiceAdapter serviceAdapter;
+    private AdminServiceAdapter serviceAdapter;
     private EditText etServiceName, etServiceDescription, etServicePrice;
     private Button btnAddService, btnBack;
     private DatabaseHelper databaseHelper;
     private List<Service> services;
+    private Service editingService;
     
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,11 +55,15 @@ public class ManageServicesActivity extends AppCompatActivity {
     }
     
     private void setupRecyclerView() {
-        serviceAdapter = new ServiceAdapter(services, new ServiceAdapter.OnServiceClickListener() {
+        serviceAdapter = new AdminServiceAdapter(services, new AdminServiceAdapter.OnServiceActionListener() {
             @Override
-            public void onServiceClick(Service service) {
-                // For admin, we can implement edit/delete functionality here
-                Toast.makeText(ManageServicesActivity.this, "Service: " + service.getServiceName(), Toast.LENGTH_SHORT).show();
+            public void onEditService(Service service) {
+                editService(service);
+            }
+            
+            @Override
+            public void onDeleteService(Service service) {
+                deleteService(service);
             }
         });
         
@@ -93,16 +99,31 @@ public class ManageServicesActivity extends AppCompatActivity {
         
         if (validateServiceInput(serviceName, priceText)) {
             double price = Double.parseDouble(priceText);
-            Service service = new Service(serviceName, serviceDescription, price, 1);
             
-            if (databaseHelper.addService(service)) {
-                Toast.makeText(this, "Service added successfully!", Toast.LENGTH_SHORT).show();
-                etServiceName.setText("");
-                etServiceDescription.setText("");
-                etServicePrice.setText("");
-                loadServices();
+            if (editingService != null) {
+                // Update existing service
+                editingService.setServiceName(serviceName);
+                editingService.setDescription(serviceDescription);
+                editingService.setPrice(price);
+                
+                if (databaseHelper.updateService(editingService)) {
+                    Toast.makeText(this, "Service updated successfully!", Toast.LENGTH_SHORT).show();
+                    clearForm();
+                    loadServices();
+                } else {
+                    Toast.makeText(this, "Failed to update service. Please try again.", Toast.LENGTH_SHORT).show();
+                }
             } else {
-                Toast.makeText(this, "Failed to add service. Please try again.", Toast.LENGTH_SHORT).show();
+                // Add new service
+                Service service = new Service(serviceName, serviceDescription, price, 1);
+                
+                if (databaseHelper.addService(service)) {
+                    Toast.makeText(this, "Service added successfully!", Toast.LENGTH_SHORT).show();
+                    clearForm();
+                    loadServices();
+                } else {
+                    Toast.makeText(this, "Failed to add service. Please try again.", Toast.LENGTH_SHORT).show();
+                }
             }
         }
     }
@@ -132,5 +153,37 @@ public class ManageServicesActivity extends AppCompatActivity {
         }
         
         return isValid;
+    }
+    
+    private void editService(Service service) {
+        editingService = service;
+        etServiceName.setText(service.getServiceName());
+        etServiceDescription.setText(service.getDescription());
+        etServicePrice.setText(String.valueOf(service.getPrice()));
+        btnAddService.setText("Update Service");
+    }
+    
+    private void deleteService(Service service) {
+        new AlertDialog.Builder(this)
+            .setTitle("Delete Service")
+            .setMessage("Are you sure you want to delete this service?")
+            .setPositiveButton("Delete", (dialog, which) -> {
+                if (databaseHelper.deleteService(service.getId())) {
+                    Toast.makeText(this, "Service deleted successfully!", Toast.LENGTH_SHORT).show();
+                    loadServices();
+                } else {
+                    Toast.makeText(this, "Failed to delete service. Please try again.", Toast.LENGTH_SHORT).show();
+                }
+            })
+            .setNegativeButton("Cancel", null)
+            .show();
+    }
+    
+    private void clearForm() {
+        etServiceName.setText("");
+        etServiceDescription.setText("");
+        etServicePrice.setText("");
+        btnAddService.setText("Add Service");
+        editingService = null;
     }
 }

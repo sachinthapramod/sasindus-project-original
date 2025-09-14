@@ -30,6 +30,16 @@
                 android:textColor="@color/primary_color" />
 
             <TextView
+                android:id="@+id/tvRoomDescription"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Room Description"
+                android:textSize="14sp"
+                android:layout_marginTop="4dp"
+                android:maxLines="2"
+                android:ellipsize="end" />
+
+            <TextView
                 android:id="@+id/tvRoomPrice"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

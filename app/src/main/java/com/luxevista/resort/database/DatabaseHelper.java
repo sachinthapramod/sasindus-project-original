@@ -20,7 +20,7 @@ import java.util.List;
 public class DatabaseHelper extends SQLiteOpenHelper {
     
     private static final String DATABASE_NAME = "luxevista_resort.db";
-    private static final int DATABASE_VERSION = 1;
+    private static final int DATABASE_VERSION = 2;
     
     // Table names
     private static final String TABLE_USERS = "users";
@@ -40,6 +40,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     // Room table columns
     private static final String COLUMN_ROOM_ID = "id";
     private static final String COLUMN_ROOM_TYPE = "room_type";
+    private static final String COLUMN_ROOM_DESCRIPTION = "description";
+    private static final String COLUMN_ROOM_IMAGE_PATH = "image_path";
     private static final String COLUMN_ROOM_PRICE = "price";
     private static final String COLUMN_ROOM_AVAILABILITY = "availability";
     
@@ -47,6 +49,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String COLUMN_SERVICE_ID = "id";
     private static final String COLUMN_SERVICE_NAME = "service_name";
     private static final String COLUMN_SERVICE_DESCRIPTION = "description";
+    private static final String COLUMN_SERVICE_IMAGE_PATH = "image_path";
     private static final String COLUMN_SERVICE_PRICE = "price";
     private static final String COLUMN_SERVICE_AVAILABILITY = "availability";
     
@@ -85,6 +88,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         "CREATE TABLE " + TABLE_ROOMS + "(" +
         COLUMN_ROOM_ID + " INTEGER PRIMARY KEY AUTOINCREMENT," +
         COLUMN_ROOM_TYPE + " TEXT NOT NULL," +
+        COLUMN_ROOM_DESCRIPTION + " TEXT," +
+        COLUMN_ROOM_IMAGE_PATH + " TEXT," +
         COLUMN_ROOM_PRICE + " REAL NOT NULL," +
         COLUMN_ROOM_AVAILABILITY + " INTEGER NOT NULL" +
         ")";
@@ -94,6 +99,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         COLUMN_SERVICE_ID + " INTEGER PRIMARY KEY AUTOINCREMENT," +
         COLUMN_SERVICE_NAME + " TEXT NOT NULL," +
         COLUMN_SERVICE_DESCRIPTION + " TEXT," +
+        COLUMN_SERVICE_IMAGE_PATH + " TEXT," +
         COLUMN_SERVICE_PRICE + " REAL NOT NULL," +
         COLUMN_SERVICE_AVAILABILITY + " INTEGER NOT NULL" +
         ")";
@@ -150,13 +156,12 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        db.execSQL("DROP TABLE IF EXISTS " + TABLE_RESERVATIONS);
-        db.execSQL("DROP TABLE IF EXISTS " + TABLE_BOOKINGS);
-        db.execSQL("DROP TABLE IF EXISTS " + TABLE_OFFERS);
-        db.execSQL("DROP TABLE IF EXISTS " + TABLE_SERVICES);
-        db.execSQL("DROP TABLE IF EXISTS " + TABLE_ROOMS);
-        db.execSQL("DROP TABLE IF EXISTS " + TABLE_USERS);
-        onCreate(db);
+        if (oldVersion < 2) {
+            // Add new columns to existing tables
+            db.execSQL("ALTER TABLE " + TABLE_ROOMS + " ADD COLUMN " + COLUMN_ROOM_DESCRIPTION + " TEXT");
+            db.execSQL("ALTER TABLE " + TABLE_ROOMS + " ADD COLUMN " + COLUMN_ROOM_IMAGE_PATH + " TEXT");
+            db.execSQL("ALTER TABLE " + TABLE_SERVICES + " ADD COLUMN " + COLUMN_SERVICE_IMAGE_PATH + " TEXT");
+        }
     }
     
     private void insertDefaultAdmin(SQLiteDatabase db) {
@@ -263,6 +268,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             Room room = new Room(
                 cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_ROOM_ID)),
                 cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_ROOM_TYPE)),
+                cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_ROOM_DESCRIPTION)),
+                cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_ROOM_IMAGE_PATH)),
                 cursor.getDouble(cursor.getColumnIndexOrThrow(COLUMN_ROOM_PRICE)),
                 cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_ROOM_AVAILABILITY))
             );
@@ -277,6 +284,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
         values.put(COLUMN_ROOM_TYPE, room.getRoomType());
+        values.put(COLUMN_ROOM_DESCRIPTION, room.getDescription());
+        values.put(COLUMN_ROOM_IMAGE_PATH, room.getImagePath());
         values.put(COLUMN_ROOM_PRICE, room.getPrice());
         values.put(COLUMN_ROOM_AVAILABILITY, room.getAvailability());
         
@@ -289,6 +298,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
         values.put(COLUMN_ROOM_TYPE, room.getRoomType());
+        values.put(COLUMN_ROOM_DESCRIPTION, room.getDescription());
+        values.put(COLUMN_ROOM_IMAGE_PATH, room.getImagePath());
         values.put(COLUMN_ROOM_PRICE, room.getPrice());
         values.put(COLUMN_ROOM_AVAILABILITY, room.getAvailability());
         
@@ -317,6 +328,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_SERVICE_ID)),
                 cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_SERVICE_NAME)),
                 cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_SERVICE_DESCRIPTION)),
+                cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_SERVICE_IMAGE_PATH)),
                 cursor.getDouble(cursor.getColumnIndexOrThrow(COLUMN_SERVICE_PRICE)),
                 cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_SERVICE_AVAILABILITY))
             );
@@ -332,6 +344,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         ContentValues values = new ContentValues();
         values.put(COLUMN_SERVICE_NAME, service.getServiceName());
         values.put(COLUMN_SERVICE_DESCRIPTION, service.getDescription());
+        values.put(COLUMN_SERVICE_IMAGE_PATH, service.getImagePath());
         values.put(COLUMN_SERVICE_PRICE, service.getPrice());
         values.put(COLUMN_SERVICE_AVAILABILITY, service.getAvailability());
         
@@ -345,6 +358,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         ContentValues values = new ContentValues();
         values.put(COLUMN_SERVICE_NAME, service.getServiceName());
         values.put(COLUMN_SERVICE_DESCRIPTION, service.getDescription());
+        values.put(COLUMN_SERVICE_IMAGE_PATH, service.getImagePath());
         values.put(COLUMN_SERVICE_PRICE, service.getPrice());
         values.put(COLUMN_SERVICE_AVAILABILITY, service.getAvailability());
         

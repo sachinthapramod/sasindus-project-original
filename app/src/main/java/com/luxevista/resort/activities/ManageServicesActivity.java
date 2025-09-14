@@ -1,13 +1,24 @@
 package com.luxevista.resort.activities;
 
 import android.app.AlertDialog;
+import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.text.TextUtils;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResult;
+import androidx.activity.result.ActivityResultCallback;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -17,6 +28,8 @@ import com.luxevista.resort.adapters.AdminServiceAdapter;
 import com.luxevista.resort.database.DatabaseHelper;
 import com.luxevista.resort.models.Service;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.List;
 
 public class ManageServicesActivity extends AppCompatActivity {
@@ -24,10 +37,14 @@ public class ManageServicesActivity extends AppCompatActivity {
     private RecyclerView recyclerViewServices;
     private AdminServiceAdapter serviceAdapter;
     private EditText etServiceName, etServiceDescription, etServicePrice;
-    private Button btnAddService, btnBack;
+    private ImageView ivServiceImage;
+    private TextView tvServiceImagePath;
+    private Button btnAddService, btnBack, btnSelectServiceImage;
     private DatabaseHelper databaseHelper;
     private List<Service> services;
     private Service editingService;
+    private String selectedImagePath;
+    private ActivityResultLauncher<Intent> imagePickerLauncher;
     
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,6 +53,7 @@ public class ManageServicesActivity extends AppCompatActivity {
         
         initializeViews();
         initializeDatabase();
+        setupImagePicker();
         setupRecyclerView();
         loadServices();
         setupClickListeners();
@@ -46,12 +64,44 @@ public class ManageServicesActivity extends AppCompatActivity {
         etServiceName = findViewById(R.id.etServiceName);
         etServiceDescription = findViewById(R.id.etServiceDescription);
         etServicePrice = findViewById(R.id.etServicePrice);
+        ivServiceImage = findViewById(R.id.ivServiceImage);
+        tvServiceImagePath = findViewById(R.id.tvServiceImagePath);
         btnAddService = findViewById(R.id.btnAddService);
         btnBack = findViewById(R.id.btnBack);
+        btnSelectServiceImage = findViewById(R.id.btnSelectServiceImage);
     }
     
     private void initializeDatabase() {
         databaseHelper = new DatabaseHelper(this);
+    }
+    
+    private void setupImagePicker() {
+        imagePickerLauncher = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            new ActivityResultCallback<ActivityResult>() {
+                @Override
+                public void onActivityResult(ActivityResult result) {
+                    if (result.getResultCode() == RESULT_OK && result.getData() != null) {
+                        Uri imageUri = result.getData().getData();
+                        if (imageUri != null) {
+                            selectedImagePath = imageUri.toString();
+                            loadImageFromUri(imageUri);
+                            tvServiceImagePath.setText("Image selected");
+                        }
+                    }
+                }
+            }
+        );
+    }
+    
+    private void loadImageFromUri(Uri imageUri) {
+        try {
+            Bitmap bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), imageUri);
+            ivServiceImage.setImageBitmap(bitmap);
+        } catch (IOException e) {
+            e.printStackTrace();
+            Toast.makeText(this, "Error loading image", Toast.LENGTH_SHORT).show();
+        }
     }
     
     private void setupRecyclerView() {
@@ -90,6 +140,18 @@ public class ManageServicesActivity extends AppCompatActivity {
                 finish();
             }
         });
+        
+        btnSelectServiceImage.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                openImagePicker();
+            }
+        });
+    }
+    
+    private void openImagePicker() {
+        Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+        imagePickerLauncher.launch(intent);
     }
     
     private void addService() {
@@ -104,6 +166,7 @@ public class ManageServicesActivity extends AppCompatActivity {
                 // Update existing service
                 editingService.setServiceName(serviceName);
                 editingService.setDescription(serviceDescription);
+                editingService.setImagePath(selectedImagePath != null ? selectedImagePath : "");
                 editingService.setPrice(price);
                 
                 if (databaseHelper.updateService(editingService)) {
@@ -115,7 +178,7 @@ public class ManageServicesActivity extends AppCompatActivity {
                 }
             } else {
                 // Add new service
-                Service service = new Service(serviceName, serviceDescription, price, 1);
+                Service service = new Service(serviceName, serviceDescription, selectedImagePath != null ? selectedImagePath : "", price, 1);
                 
                 if (databaseHelper.addService(service)) {
                     Toast.makeText(this, "Service added successfully!", Toast.LENGTH_SHORT).show();
@@ -160,6 +223,21 @@ public class ManageServicesActivity extends AppCompatActivity {
         etServiceName.setText(service.getServiceName());
         etServiceDescription.setText(service.getDescription());
         etServicePrice.setText(String.valueOf(service.getPrice()));
+        selectedImagePath = service.getImagePath();
+        
+        if (!TextUtils.isEmpty(service.getImagePath())) {
+            try {
+                Uri imageUri = Uri.parse(service.getImagePath());
+                loadImageFromUri(imageUri);
+                tvServiceImagePath.setText("Image loaded");
+            } catch (Exception e) {
+                tvServiceImagePath.setText("Error loading image");
+            }
+        } else {
+            ivServiceImage.setImageResource(R.drawable.spa);
+            tvServiceImagePath.setText("No image selected");
+        }
+        
         btnAddService.setText("Update Service");
     }
     
@@ -183,6 +261,9 @@ public class ManageServicesActivity extends AppCompatActivity {
         etServiceName.setText("");
         etServiceDescription.setText("");
         etServicePrice.setText("");
+        ivServiceImage.setImageResource(R.drawable.spa);
+        tvServiceImagePath.setText("No image selected");
+        selectedImagePath = null;
         btnAddService.setText("Add Service");
         editingService = null;
     }

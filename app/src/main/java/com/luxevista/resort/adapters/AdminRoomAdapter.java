@@ -53,12 +53,13 @@ public class AdminRoomAdapter extends RecyclerView.Adapter<AdminRoomAdapter.Admi
     }
     
     class AdminRoomViewHolder extends RecyclerView.ViewHolder {
-        private TextView tvRoomType, tvRoomPrice, tvAvailability;
+        private TextView tvRoomType, tvRoomDescription, tvRoomPrice, tvAvailability;
         private ImageButton btnEdit, btnDelete;
         
         public AdminRoomViewHolder(@NonNull View itemView) {
             super(itemView);
             tvRoomType = itemView.findViewById(R.id.tvRoomType);
+            tvRoomDescription = itemView.findViewById(R.id.tvRoomDescription);
             tvRoomPrice = itemView.findViewById(R.id.tvRoomPrice);
             tvAvailability = itemView.findViewById(R.id.tvAvailability);
             btnEdit = itemView.findViewById(R.id.btnEdit);
@@ -91,6 +92,7 @@ public class AdminRoomAdapter extends RecyclerView.Adapter<AdminRoomAdapter.Admi
         
         public void bind(Room room) {
             tvRoomType.setText(room.getRoomType());
+            tvRoomDescription.setText(room.getDescription());
             tvRoomPrice.setText("$" + String.format("%.2f", room.getPrice()));
             tvAvailability.setText(room.isAvailable() ? "Available" : "Not Available");
         }

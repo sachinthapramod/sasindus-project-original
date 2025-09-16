@@ -7,16 +7,18 @@ public class Booking {
     private String checkinDate;
     private String checkoutDate;
     private String status;
+    private boolean confirmed;
     
     public Booking() {}
     
-    public Booking(int id, int userId, int roomId, String checkinDate, String checkoutDate, String status) {
+    public Booking(int id, int userId, int roomId, String checkinDate, String checkoutDate, String status, boolean confirmed) {
         this.id = id;
         this.userId = userId;
         this.roomId = roomId;
         this.checkinDate = checkinDate;
         this.checkoutDate = checkoutDate;
         this.status = status;
+        this.confirmed = confirmed;
     }
     
     public Booking(int userId, int roomId, String checkinDate, String checkoutDate, String status) {
@@ -25,6 +27,7 @@ public class Booking {
         this.checkinDate = checkinDate;
         this.checkoutDate = checkoutDate;
         this.status = status;
+        this.confirmed = false; // Default to unconfirmed
     }
     
     // Getters and Setters
@@ -74,5 +77,13 @@ public class Booking {
     
     public void setStatus(String status) {
         this.status = status;
+    }
+    
+    public boolean isConfirmed() {
+        return confirmed;
+    }
+    
+    public void setConfirmed(boolean confirmed) {
+        this.confirmed = confirmed;
     }
 }

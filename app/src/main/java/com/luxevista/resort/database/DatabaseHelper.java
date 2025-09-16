@@ -20,7 +20,7 @@ import java.util.List;
 public class DatabaseHelper extends SQLiteOpenHelper {
     
     private static final String DATABASE_NAME = "luxevista_resort.db";
-    private static final int DATABASE_VERSION = 2;
+    private static final int DATABASE_VERSION = 3;
     
     // Table names
     private static final String TABLE_USERS = "users";
@@ -60,6 +60,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String COLUMN_BOOKING_CHECKIN_DATE = "checkin_date";
     private static final String COLUMN_BOOKING_CHECKOUT_DATE = "checkout_date";
     private static final String COLUMN_BOOKING_STATUS = "status";
+    private static final String COLUMN_BOOKING_CONFIRMED = "confirmed";
     
     // Reservation table columns
     private static final String COLUMN_RESERVATION_ID = "id";
@@ -112,6 +113,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         COLUMN_BOOKING_CHECKIN_DATE + " TEXT NOT NULL," +
         COLUMN_BOOKING_CHECKOUT_DATE + " TEXT NOT NULL," +
         COLUMN_BOOKING_STATUS + " TEXT NOT NULL," +
+        COLUMN_BOOKING_CONFIRMED + " INTEGER NOT NULL DEFAULT 0," +
         "FOREIGN KEY(" + COLUMN_BOOKING_USER_ID + ") REFERENCES " + TABLE_USERS + "(" + COLUMN_USER_ID + ")," +
         "FOREIGN KEY(" + COLUMN_BOOKING_ROOM_ID + ") REFERENCES " + TABLE_ROOMS + "(" + COLUMN_ROOM_ID + ")" +
         ")";
@@ -161,6 +163,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             db.execSQL("ALTER TABLE " + TABLE_ROOMS + " ADD COLUMN " + COLUMN_ROOM_DESCRIPTION + " TEXT");
             db.execSQL("ALTER TABLE " + TABLE_ROOMS + " ADD COLUMN " + COLUMN_ROOM_IMAGE_PATH + " TEXT");
             db.execSQL("ALTER TABLE " + TABLE_SERVICES + " ADD COLUMN " + COLUMN_SERVICE_IMAGE_PATH + " TEXT");
+        }
+        if (oldVersion < 3) {
+            // Add confirmed column to bookings table
+            db.execSQL("ALTER TABLE " + TABLE_BOOKINGS + " ADD COLUMN " + COLUMN_BOOKING_CONFIRMED + " INTEGER NOT NULL DEFAULT 0");
         }
     }
     
@@ -385,6 +391,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         values.put(COLUMN_BOOKING_CHECKIN_DATE, booking.getCheckinDate());
         values.put(COLUMN_BOOKING_CHECKOUT_DATE, booking.getCheckoutDate());
         values.put(COLUMN_BOOKING_STATUS, booking.getStatus());
+        values.put(COLUMN_BOOKING_CONFIRMED, booking.isConfirmed() ? 1 : 0);
         
         long result = db.insert(TABLE_BOOKINGS, null, values);
         db.close();
@@ -404,7 +411,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_BOOKING_ROOM_ID)),
                 cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_BOOKING_CHECKIN_DATE)),
                 cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_BOOKING_CHECKOUT_DATE)),
-                cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_BOOKING_STATUS))
+                cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_BOOKING_STATUS)),
+                cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_BOOKING_CONFIRMED)) == 1
             );
             bookings.add(booking);
         }
@@ -425,13 +433,49 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_BOOKING_ROOM_ID)),
                 cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_BOOKING_CHECKIN_DATE)),
                 cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_BOOKING_CHECKOUT_DATE)),
-                cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_BOOKING_STATUS))
+                cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_BOOKING_STATUS)),
+                cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_BOOKING_CONFIRMED)) == 1
             );
             bookings.add(booking);
         }
         cursor.close();
         db.close();
         return bookings;
+    }
+    
+    public boolean updateBooking(Booking booking) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(COLUMN_BOOKING_USER_ID, booking.getUserId());
+        values.put(COLUMN_BOOKING_ROOM_ID, booking.getRoomId());
+        values.put(COLUMN_BOOKING_CHECKIN_DATE, booking.getCheckinDate());
+        values.put(COLUMN_BOOKING_CHECKOUT_DATE, booking.getCheckoutDate());
+        values.put(COLUMN_BOOKING_STATUS, booking.getStatus());
+        values.put(COLUMN_BOOKING_CONFIRMED, booking.isConfirmed() ? 1 : 0);
+        
+        int result = db.update(TABLE_BOOKINGS, values, COLUMN_BOOKING_ID + "=?", 
+                new String[]{String.valueOf(booking.getId())});
+        db.close();
+        return result > 0;
+    }
+    
+    public boolean confirmBooking(int bookingId) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(COLUMN_BOOKING_CONFIRMED, 1);
+        
+        int result = db.update(TABLE_BOOKINGS, values, COLUMN_BOOKING_ID + "=?", 
+                new String[]{String.valueOf(bookingId)});
+        db.close();
+        return result > 0;
+    }
+    
+    public boolean deleteBooking(int bookingId) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        int result = db.delete(TABLE_BOOKINGS, COLUMN_BOOKING_ID + "=?", 
+                new String[]{String.valueOf(bookingId)});
+        db.close();
+        return result > 0;
     }
     
     // Reservation operations

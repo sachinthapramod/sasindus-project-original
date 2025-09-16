@@ -70,6 +70,10 @@
         <activity
             android:name=".activities.ViewBookingsActivity"
             android:exported="false" />
+            
+        <activity
+            android:name=".activities.MyBookingsActivity"
+            android:exported="false" />
 
     </application>
 

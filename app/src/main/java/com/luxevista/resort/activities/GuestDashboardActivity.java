@@ -15,7 +15,7 @@ import com.luxevista.resort.R;
 public class GuestDashboardActivity extends AppCompatActivity {
     
     private TextView tvWelcome;
-    private LinearLayout btnBookRoom, btnReserveService, btnViewOffers, btnProfile, btnLogout;
+    private LinearLayout btnBookRoom, btnReserveService, btnViewOffers, btnMyBookings, btnProfile, btnLogout;
     private BottomNavigationView bottomNav;
     private SharedPreferences sharedPreferences;
     
@@ -35,6 +35,7 @@ public class GuestDashboardActivity extends AppCompatActivity {
         btnBookRoom = findViewById(R.id.btnBookRoom);
         btnReserveService = findViewById(R.id.btnReserveService);
         btnViewOffers = findViewById(R.id.btnViewOffers);
+        btnMyBookings = findViewById(R.id.btnMyBookings);
         btnProfile = findViewById(R.id.btnProfile);
         btnLogout = findViewById(R.id.btnLogout);
         bottomNav = findViewById(R.id.bottomNav);
@@ -70,6 +71,14 @@ public class GuestDashboardActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(GuestDashboardActivity.this, OffersActivity.class);
+                startActivity(intent);
+            }
+        });
+        
+        btnMyBookings.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(GuestDashboardActivity.this, MyBookingsActivity.class);
                 startActivity(intent);
             }
         });

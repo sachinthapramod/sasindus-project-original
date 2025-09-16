@@ -35,5 +35,32 @@
         <item name="fontFamily">@font/poppins</item>
         <item name="android:textColor">@color/on_surface</item>
     </style>
+
+    <!-- Calendar Dialog Button Styles -->
+    <style name="Widget.Luxe.CalendarButton.OK" parent="Widget.Material3.Button">
+        <item name="android:background">@drawable/calendar_button_ok</item>
+        <item name="android:textColor">@android:color/white</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:paddingStart">24dp</item>
+        <item name="android:paddingEnd">24dp</item>
+        <item name="android:paddingTop">12dp</item>
+        <item name="android:paddingBottom">12dp</item>
+        <item name="android:minWidth">100dp</item>
+    </style>
+
+    <style name="Widget.Luxe.CalendarButton.Cancel" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="android:background">@drawable/calendar_button_cancel</item>
+        <item name="android:textColor">@color/primary_color</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:paddingStart">24dp</item>
+        <item name="android:paddingEnd">24dp</item>
+        <item name="android:paddingTop">12dp</item>
+        <item name="android:paddingBottom">12dp</item>
+        <item name="android:minWidth">100dp</item>
+        <item name="strokeColor">@color/primary_color</item>
+        <item name="strokeWidth">2dp</item>
+    </style>
 </resources>
 

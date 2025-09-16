@@ -166,6 +166,27 @@ public class ServiceReservationActivity extends AppCompatActivity {
         datePickerDialog.getDatePicker().setMinDate(System.currentTimeMillis() - 1000);
         
         datePickerDialog.setTitle(title);
+        
         datePickerDialog.show();
+        
+        // Apply custom styles to buttons after showing
+        Button okButton = datePickerDialog.getButton(DatePickerDialog.BUTTON_POSITIVE);
+        Button cancelButton = datePickerDialog.getButton(DatePickerDialog.BUTTON_NEGATIVE);
+        
+        if (okButton != null) {
+            okButton.setBackgroundResource(R.drawable.calendar_button_ok);
+            okButton.setTextColor(getResources().getColor(android.R.color.white));
+            okButton.setTextSize(16);
+            okButton.setTypeface(null, android.graphics.Typeface.BOLD);
+            okButton.setPadding(48, 24, 48, 24);
+        }
+        
+        if (cancelButton != null) {
+            cancelButton.setBackgroundResource(R.drawable.calendar_button_cancel);
+            cancelButton.setTextColor(getResources().getColor(R.color.primary_color));
+            cancelButton.setTextSize(16);
+            cancelButton.setTypeface(null, android.graphics.Typeface.BOLD);
+            cancelButton.setPadding(48, 24, 48, 24);
+        }
     }
 }

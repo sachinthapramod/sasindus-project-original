@@ -124,10 +124,11 @@ public class BookingAdapter extends RecyclerView.Adapter<BookingAdapter.BookingV
                 
                 tvBookingId.setText("Booking ID: " + booking.getId());
                 
-                // Get room details from database
+                // Get room details from database (with caching)
                 String roomType = "Room ID: " + booking.getRoomId();
                 if (databaseHelper != null) {
                     try {
+                        // Use a more efficient query or cache room data
                         Room room = databaseHelper.getRoomById(booking.getRoomId());
                         if (room != null) {
                             roomType = "Room: " + room.getRoomType();
@@ -148,11 +149,13 @@ public class BookingAdapter extends RecyclerView.Adapter<BookingAdapter.BookingV
                 
                 if (isConfirmed) {
                     tvConfirmationStatus.setText("Confirmed");
-                    tvConfirmationStatus.setTextColor(itemView.getContext().getResources().getColor(android.R.color.holo_green_dark));
+                    tvConfirmationStatus.setTextColor(itemView.getContext().getResources().getColor(android.R.color.white));
+                    tvConfirmationStatus.setBackgroundResource(R.drawable.status_confirmed_background);
                     btnDelete.setVisibility(View.GONE);
                 } else {
                     tvConfirmationStatus.setText("Pending");
-                    tvConfirmationStatus.setTextColor(itemView.getContext().getResources().getColor(android.R.color.holo_orange_dark));
+                    tvConfirmationStatus.setTextColor(itemView.getContext().getResources().getColor(android.R.color.white));
+                    tvConfirmationStatus.setBackgroundResource(R.drawable.status_pending_background);
                     btnDelete.setVisibility(View.VISIBLE);
                 }
             } catch (Exception e) {

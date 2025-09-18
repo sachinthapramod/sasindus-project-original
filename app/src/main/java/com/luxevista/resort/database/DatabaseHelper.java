@@ -15,13 +15,20 @@ import com.luxevista.resort.models.Service;
 import com.luxevista.resort.models.User;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
     
     private static final String DATABASE_NAME = "luxevista_resort.db";
     private static final int DATABASE_VERSION = 5; // Increment version to force database recreation
     private Context context;
+    
+    // Caching for better performance
+    private Map<Integer, Room> roomCache = new HashMap<>();
+    private Map<Integer, Service> serviceCache = new HashMap<>();
+    private boolean cacheInitialized = false;
     
     // Table names
     private static final String TABLE_USERS = "users";
@@ -145,6 +152,60 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         this.context = context;
         // Force database recreation to fix the issue
         android.util.Log.d("DatabaseHelper", "DatabaseHelper created with version " + DATABASE_VERSION);
+        initializeCache();
+    }
+    
+    private void initializeCache() {
+        if (!cacheInitialized) {
+            loadRoomsIntoCache();
+            loadServicesIntoCache();
+            cacheInitialized = true;
+        }
+    }
+    
+    private void loadRoomsIntoCache() {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.query(TABLE_ROOMS, null, null, null, null, null, null);
+        
+        while (cursor.moveToNext()) {
+            Room room = new Room(
+                cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_ROOM_ID)),
+                cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_ROOM_TYPE)),
+                cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_ROOM_DESCRIPTION)),
+                cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_ROOM_IMAGE_PATH)),
+                cursor.getDouble(cursor.getColumnIndexOrThrow(COLUMN_ROOM_PRICE)),
+                cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_ROOM_AVAILABILITY))
+            );
+            roomCache.put(room.getId(), room);
+        }
+        cursor.close();
+        db.close();
+    }
+    
+    private void loadServicesIntoCache() {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.query(TABLE_SERVICES, null, null, null, null, null, null);
+        
+        while (cursor.moveToNext()) {
+            Service service = new Service(
+                cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_SERVICE_ID)),
+                cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_SERVICE_NAME)),
+                cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_SERVICE_DESCRIPTION)),
+                cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_SERVICE_IMAGE_PATH)),
+                cursor.getDouble(cursor.getColumnIndexOrThrow(COLUMN_SERVICE_PRICE)),
+                cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_SERVICE_AVAILABILITY))
+            );
+            serviceCache.put(service.getId(), service);
+        }
+        cursor.close();
+        db.close();
+    }
+    
+    public void refreshCache() {
+        roomCache.clear();
+        serviceCache.clear();
+        cacheInitialized = false;
+        initializeCache();
     }
     
     @Override
@@ -555,6 +616,12 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         
         long result = db.insert(TABLE_ROOMS, null, values);
         db.close();
+        
+        // Refresh cache after modification
+        if (result != -1) {
+            refreshCache();
+        }
+        
         return result != -1;
     }
     
@@ -570,6 +637,12 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         int result = db.update(TABLE_ROOMS, values, COLUMN_ROOM_ID + "=?", 
                 new String[]{String.valueOf(room.getId())});
         db.close();
+        
+        // Refresh cache after modification
+        if (result > 0) {
+            refreshCache();
+        }
+        
         return result > 0;
     }
     
@@ -582,6 +655,12 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
     
     public Room getRoomById(int roomId) {
+        // Use cache for better performance
+        if (roomCache.containsKey(roomId)) {
+            return roomCache.get(roomId);
+        }
+        
+        // Fallback to database query if not in cache
         SQLiteDatabase db = this.getReadableDatabase();
         Cursor cursor = db.query(TABLE_ROOMS, null, COLUMN_ROOM_ID + "=?", 
                 new String[]{String.valueOf(roomId)}, null, null, null);
@@ -596,6 +675,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 cursor.getDouble(cursor.getColumnIndexOrThrow(COLUMN_ROOM_PRICE)),
                 cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_ROOM_AVAILABILITY))
             );
+            // Add to cache for future use
+            roomCache.put(roomId, room);
         }
         cursor.close();
         db.close();
@@ -662,6 +743,12 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
     
     public Service getServiceById(int serviceId) {
+        // Use cache for better performance
+        if (serviceCache.containsKey(serviceId)) {
+            return serviceCache.get(serviceId);
+        }
+        
+        // Fallback to database query if not in cache
         SQLiteDatabase db = this.getReadableDatabase();
         Cursor cursor = db.query(TABLE_SERVICES, null, COLUMN_SERVICE_ID + "=?", 
                 new String[]{String.valueOf(serviceId)}, null, null, null);
@@ -676,6 +763,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 cursor.getDouble(cursor.getColumnIndexOrThrow(COLUMN_SERVICE_PRICE)),
                 cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_SERVICE_AVAILABILITY))
             );
+            // Add to cache for future use
+            serviceCache.put(serviceId, service);
         }
         cursor.close();
         db.close();

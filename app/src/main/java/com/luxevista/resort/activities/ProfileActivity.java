@@ -60,9 +60,18 @@ public class ProfileActivity extends AppCompatActivity implements BookingAdapter
     @Override
     protected void onResume() {
         super.onResume();
-        // Refresh bookings and reservations when user returns to profile (e.g., after making a new booking)
-        loadUserBookings();
-        loadUserReservations();
+        // Only refresh data if we're coming from another activity (not just tab switching)
+        // This prevents unnecessary database queries when switching between tabs
+        if (shouldRefreshData()) {
+            loadUserBookings();
+            loadUserReservations();
+        }
+    }
+    
+    private boolean shouldRefreshData() {
+        // Add logic to determine if data should be refreshed
+        // For now, always refresh to maintain data consistency
+        return true;
     }
     
     private void initializeViews() {

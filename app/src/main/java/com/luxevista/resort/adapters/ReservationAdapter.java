@@ -142,11 +142,13 @@ public class ReservationAdapter extends RecyclerView.Adapter<ReservationAdapter.
                 
                 if (isConfirmed) {
                     tvConfirmationStatus.setText("Confirmed");
-                    tvConfirmationStatus.setTextColor(itemView.getContext().getResources().getColor(android.R.color.holo_green_dark));
+                    tvConfirmationStatus.setTextColor(itemView.getContext().getResources().getColor(android.R.color.white));
+                    tvConfirmationStatus.setBackgroundResource(R.drawable.status_confirmed_background);
                     btnDelete.setVisibility(View.GONE);
                 } else {
                     tvConfirmationStatus.setText("Pending");
-                    tvConfirmationStatus.setTextColor(itemView.getContext().getResources().getColor(android.R.color.holo_orange_dark));
+                    tvConfirmationStatus.setTextColor(itemView.getContext().getResources().getColor(android.R.color.white));
+                    tvConfirmationStatus.setBackgroundResource(R.drawable.status_pending_background);
                     btnDelete.setVisibility(View.VISIBLE);
                 }
             } catch (Exception e) {

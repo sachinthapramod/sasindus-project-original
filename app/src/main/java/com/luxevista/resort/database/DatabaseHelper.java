@@ -897,9 +897,13 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
         values.put(COLUMN_RESERVATION_CONFIRMED, 1);
+        values.put(COLUMN_RESERVATION_STATUS, "confirmed"); // Update status to confirmed as well
         
         int result = db.update(TABLE_RESERVATIONS, values, COLUMN_RESERVATION_ID + "=?", 
                 new String[]{String.valueOf(reservationId)});
+        
+        android.util.Log.d("DatabaseHelper", "Confirming reservation ID: " + reservationId + ", Result: " + result);
+        
         db.close();
         return result > 0;
     }

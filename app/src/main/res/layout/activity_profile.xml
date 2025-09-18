@@ -69,33 +69,112 @@
             android:textSize="16sp"
             android:layout_marginBottom="24dp" />
 
-        <TextView
+        <!-- Tab Layout for Bookings and Reservations -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="My Bookings"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="16dp" />
+            android:orientation="horizontal"
+            android:layout_marginBottom="16dp">
 
-        <!-- No Bookings Message -->
-        <TextView
-            android:id="@+id/tvNoBookings"
+            <Button
+                android:id="@+id/btnBookingsTab"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Room Bookings"
+                android:textSize="14sp"
+                android:layout_marginEnd="4dp"
+                android:background="@drawable/tab_button_selected" />
+
+            <Button
+                android:id="@+id/btnReservationsTab"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Service Reservations"
+                android:textSize="14sp"
+                android:layout_marginStart="4dp"
+                android:background="@drawable/tab_button_unselected" />
+
+        </LinearLayout>
+
+        <!-- Bookings Section -->
+        <LinearLayout
+            android:id="@+id/layoutBookings"
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
-            android:text="No bookings found.\n\nYour booking history will appear here once you make reservations."
-            android:textSize="16sp"
-            android:textColor="@color/text_secondary"
-            android:gravity="center"
-            android:padding="32dp"
-            android:visibility="gone" />
+            android:orientation="vertical"
+            android:visibility="visible">
 
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/recyclerViewBookings"
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="My Room Bookings"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="16dp" />
+
+            <!-- No Bookings Message -->
+            <TextView
+                android:id="@+id/tvNoBookings"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:text="No room bookings found.\n\nYour booking history will appear here once you make reservations."
+                android:textSize="16sp"
+                android:textColor="@color/text_secondary"
+                android:gravity="center"
+                android:padding="32dp"
+                android:visibility="gone" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerViewBookings"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:layout_marginBottom="16dp" />
+
+        </LinearLayout>
+
+        <!-- Reservations Section -->
+        <LinearLayout
+            android:id="@+id/layoutReservations"
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
-            android:layout_marginBottom="16dp" />
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="My Service Reservations"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="16dp" />
+
+            <!-- No Reservations Message -->
+            <TextView
+                android:id="@+id/tvNoReservations"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:text="No service reservations found.\n\nYour reservation history will appear here once you make reservations."
+                android:textSize="16sp"
+                android:textColor="@color/text_secondary"
+                android:gravity="center"
+                android:padding="32dp"
+                android:visibility="gone" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerViewReservations"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:layout_marginBottom="16dp" />
+
+        </LinearLayout>
 
         <Button
             android:id="@+id/btnBack"

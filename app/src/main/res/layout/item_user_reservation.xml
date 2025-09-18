@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="8dp"
+    app:cardCornerRadius="8dp"
+    app:cardElevation="4dp"
+    android:background="@color/surface_color">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- Header with ID and Status -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="8dp">
+
+            <TextView
+                android:id="@+id/tvReservationId"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Reservation ID: 123"
+                android:textSize="14sp"
+                android:textColor="@color/text_secondary" />
+
+            <TextView
+                android:id="@+id/tvConfirmationStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Pending"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:padding="4dp"
+                android:background="@drawable/status_pending_background"
+                android:textColor="@color/on_surface" />
+
+        </LinearLayout>
+
+        <!-- Service Name -->
+        <TextView
+            android:id="@+id/tvServiceName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Service Name"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="@color/primary_color"
+            android:layout_marginBottom="8dp" />
+
+        <!-- Date -->
+        <TextView
+            android:id="@+id/tvReservationDate"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Date: 2024-01-15"
+            android:textSize="14sp"
+            android:textColor="@color/on_surface"
+            android:layout_marginBottom="8dp" />
+
+        <!-- Status -->
+        <TextView
+            android:id="@+id/tvStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Status: pending"
+            android:textSize="14sp"
+            android:textColor="@color/on_surface"
+            android:layout_marginBottom="16dp" />
+
+        <!-- Action Buttons (only visible for unconfirmed reservations) -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="end">
+
+            <ImageButton
+                android:id="@+id/btnDelete"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/ic_delete"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Delete Reservation"
+                android:padding="8dp"
+                android:visibility="visible" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</androidx.cardview.widget.CardView>

@@ -6,6 +6,7 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -15,19 +16,24 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.luxevista.resort.R;
 import com.luxevista.resort.adapters.BookingAdapter;
+import com.luxevista.resort.adapters.ReservationAdapter;
 import com.luxevista.resort.database.DatabaseHelper;
 import com.luxevista.resort.models.Booking;
+import com.luxevista.resort.models.Reservation;
 
 import java.util.List;
 
-public class ProfileActivity extends AppCompatActivity implements BookingAdapter.OnBookingActionListener {
+public class ProfileActivity extends AppCompatActivity implements BookingAdapter.OnBookingActionListener, ReservationAdapter.OnReservationActionListener {
     
-    private TextView tvUserName, tvUserEmail, tvNoBookings;
-    private RecyclerView recyclerViewBookings;
+    private TextView tvUserName, tvUserEmail, tvNoBookings, tvNoReservations;
+    private RecyclerView recyclerViewBookings, recyclerViewReservations;
     private BookingAdapter bookingAdapter;
-    private Button btnBack;
+    private ReservationAdapter reservationAdapter;
+    private Button btnBack, btnBookingsTab, btnReservationsTab;
+    private LinearLayout layoutBookings, layoutReservations;
     private DatabaseHelper databaseHelper;
     private SharedPreferences sharedPreferences;
+    private boolean isBookingsTabSelected = true;
     
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,8 +47,9 @@ public class ProfileActivity extends AppCompatActivity implements BookingAdapter
             setupUserInfo();
             setupRecyclerView();
             setupClickListeners();
-            // Load bookings after everything else is set up
+            // Load bookings and reservations after everything else is set up
             loadUserBookings();
+            loadUserReservations();
         } catch (Exception e) {
             Toast.makeText(this, "Error initializing profile: " + e.getMessage(), Toast.LENGTH_LONG).show();
             e.printStackTrace();
@@ -53,8 +60,9 @@ public class ProfileActivity extends AppCompatActivity implements BookingAdapter
     @Override
     protected void onResume() {
         super.onResume();
-        // Refresh bookings when user returns to profile (e.g., after making a new booking)
+        // Refresh bookings and reservations when user returns to profile (e.g., after making a new booking)
         loadUserBookings();
+        loadUserReservations();
     }
     
     private void initializeViews() {
@@ -62,11 +70,18 @@ public class ProfileActivity extends AppCompatActivity implements BookingAdapter
             tvUserName = findViewById(R.id.tvUserName);
             tvUserEmail = findViewById(R.id.tvUserEmail);
             tvNoBookings = findViewById(R.id.tvNoBookings);
+            tvNoReservations = findViewById(R.id.tvNoReservations);
             recyclerViewBookings = findViewById(R.id.recyclerViewBookings);
+            recyclerViewReservations = findViewById(R.id.recyclerViewReservations);
             btnBack = findViewById(R.id.btnBack);
+            btnBookingsTab = findViewById(R.id.btnBookingsTab);
+            btnReservationsTab = findViewById(R.id.btnReservationsTab);
+            layoutBookings = findViewById(R.id.layoutBookings);
+            layoutReservations = findViewById(R.id.layoutReservations);
             
-            if (tvUserName == null || tvUserEmail == null || tvNoBookings == null || 
-                recyclerViewBookings == null || btnBack == null) {
+            if (tvUserName == null || tvUserEmail == null || tvNoBookings == null || tvNoReservations == null ||
+                recyclerViewBookings == null || recyclerViewReservations == null || btnBack == null ||
+                btnBookingsTab == null || btnReservationsTab == null || layoutBookings == null || layoutReservations == null) {
                 throw new RuntimeException("One or more views not found in layout");
             }
         } catch (Exception e) {
@@ -120,12 +135,19 @@ public class ProfileActivity extends AppCompatActivity implements BookingAdapter
     
     private void setupRecyclerView() {
         try {
+            // Setup bookings recycler view
             bookingAdapter = new BookingAdapter(this);
             bookingAdapter.setDatabaseHelper(databaseHelper);
             recyclerViewBookings.setLayoutManager(new LinearLayoutManager(this));
             recyclerViewBookings.setAdapter(bookingAdapter);
+            
+            // Setup reservations recycler view
+            reservationAdapter = new ReservationAdapter(this);
+            reservationAdapter.setDatabaseHelper(databaseHelper);
+            recyclerViewReservations.setLayoutManager(new LinearLayoutManager(this));
+            recyclerViewReservations.setAdapter(reservationAdapter);
         } catch (Exception e) {
-            Toast.makeText(this, "Error setting up bookings list: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "Error setting up lists: " + e.getMessage(), Toast.LENGTH_LONG).show();
             e.printStackTrace();
         }
     }
@@ -155,6 +177,31 @@ public class ProfileActivity extends AppCompatActivity implements BookingAdapter
         }
     }
     
+    private void loadUserReservations() {
+        try {
+            int userId = sharedPreferences.getInt("user_id", -1);
+            if (userId == -1) {
+                Toast.makeText(this, "User not logged in", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            
+            List<Reservation> reservations = databaseHelper.getReservationsByUserId(userId);
+            reservationAdapter.setReservations(reservations);
+            
+            // Show/hide no reservations message
+            if (reservations.isEmpty()) {
+                tvNoReservations.setVisibility(View.VISIBLE);
+                recyclerViewReservations.setVisibility(View.GONE);
+            } else {
+                tvNoReservations.setVisibility(View.GONE);
+                recyclerViewReservations.setVisibility(View.VISIBLE);
+            }
+        } catch (Exception e) {
+            Toast.makeText(this, "Error loading reservations: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            e.printStackTrace();
+        }
+    }
+    
     private void setupClickListeners() {
         btnBack.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -162,6 +209,36 @@ public class ProfileActivity extends AppCompatActivity implements BookingAdapter
                 finish();
             }
         });
+        
+        btnBookingsTab.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                switchToBookingsTab();
+            }
+        });
+        
+        btnReservationsTab.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                switchToReservationsTab();
+            }
+        });
+    }
+    
+    private void switchToBookingsTab() {
+        isBookingsTabSelected = true;
+        btnBookingsTab.setBackgroundResource(R.drawable.tab_button_selected);
+        btnReservationsTab.setBackgroundResource(R.drawable.tab_button_unselected);
+        layoutBookings.setVisibility(View.VISIBLE);
+        layoutReservations.setVisibility(View.GONE);
+    }
+    
+    private void switchToReservationsTab() {
+        isBookingsTabSelected = false;
+        btnBookingsTab.setBackgroundResource(R.drawable.tab_button_unselected);
+        btnReservationsTab.setBackgroundResource(R.drawable.tab_button_selected);
+        layoutBookings.setVisibility(View.GONE);
+        layoutReservations.setVisibility(View.VISIBLE);
     }
     
     @Override
@@ -186,6 +263,35 @@ public class ProfileActivity extends AppCompatActivity implements BookingAdapter
                             loadUserBookings(); // Refresh the list
                         } else {
                             Toast.makeText(ProfileActivity.this, "Failed to delete booking", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+    
+    @Override
+    public void onDeleteReservation(Reservation reservation) {
+        if (reservation.isConfirmed()) {
+            Toast.makeText(this, "Cannot delete confirmed reservation", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        showDeleteReservationConfirmationDialog(reservation);
+    }
+    
+    private void showDeleteReservationConfirmationDialog(Reservation reservation) {
+        new AlertDialog.Builder(this)
+                .setTitle("Delete Reservation")
+                .setMessage("Are you sure you want to delete this reservation? This action cannot be undone.")
+                .setPositiveButton("Delete", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        if (databaseHelper.deleteReservation(reservation.getId())) {
+                            Toast.makeText(ProfileActivity.this, "Reservation deleted successfully", Toast.LENGTH_SHORT).show();
+                            loadUserReservations(); // Refresh the list
+                        } else {
+                            Toast.makeText(ProfileActivity.this, "Failed to delete reservation", Toast.LENGTH_SHORT).show();
                         }
                     }
                 })

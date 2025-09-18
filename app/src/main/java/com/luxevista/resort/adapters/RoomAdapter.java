@@ -1,9 +1,17 @@
 package com.luxevista.resort.adapters;
 
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.net.Uri;
+import android.provider.MediaStore;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
+
+import java.io.File;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
@@ -52,6 +60,7 @@ public class RoomAdapter extends RecyclerView.Adapter<RoomAdapter.RoomViewHolder
     
     class RoomViewHolder extends RecyclerView.ViewHolder {
         private TextView tvRoomType, tvRoomPrice, tvAvailability, tvRoomDescription;
+        private ImageView ivRoomImage;
         
         public RoomViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -59,6 +68,7 @@ public class RoomAdapter extends RecyclerView.Adapter<RoomAdapter.RoomViewHolder
             tvRoomPrice = itemView.findViewById(R.id.tvRoomPrice);
             tvAvailability = itemView.findViewById(R.id.tvAvailability);
             tvRoomDescription = itemView.findViewById(R.id.tvRoomDescription);
+            ivRoomImage = itemView.findViewById(R.id.ivRoomImage);
             
             itemView.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -78,9 +88,50 @@ public class RoomAdapter extends RecyclerView.Adapter<RoomAdapter.RoomViewHolder
             tvRoomPrice.setText("$" + String.format("%.2f", room.getPrice()));
             tvAvailability.setText(room.isAvailable() ? "Available" : "Not Available");
             
-            // Set room description based on room type
-            String description = getRoomDescription(room.getRoomType());
+            // Set room description - use custom description if available, otherwise use default
+            String description = !TextUtils.isEmpty(room.getDescription()) ? 
+                room.getDescription() : getRoomDescription(room.getRoomType());
             tvRoomDescription.setText(description);
+            
+            // Load room image
+            loadRoomImage(room);
+        }
+        
+        private void loadRoomImage(Room room) {
+            if (!TextUtils.isEmpty(room.getImagePath()) && !room.getImagePath().equals("default_room_image")) {
+                try {
+                    // Check if it's a file path (new format) or URI (old format)
+                    if (room.getImagePath().startsWith("/")) {
+                        // It's a file path - load directly from file
+                        File imageFile = new File(room.getImagePath());
+                        if (imageFile.exists()) {
+                            Bitmap bitmap = BitmapFactory.decodeFile(room.getImagePath());
+                            if (bitmap != null) {
+                                ivRoomImage.setImageBitmap(bitmap);
+                            } else {
+                                ivRoomImage.setImageResource(R.drawable.room);
+                            }
+                        } else {
+                            ivRoomImage.setImageResource(R.drawable.room);
+                        }
+                    } else {
+                        // It's a URI (old format) - try to load from URI
+                        Uri imageUri = Uri.parse(room.getImagePath());
+                        Bitmap bitmap = MediaStore.Images.Media.getBitmap(itemView.getContext().getContentResolver(), imageUri);
+                        if (bitmap != null) {
+                            ivRoomImage.setImageBitmap(bitmap);
+                        } else {
+                            ivRoomImage.setImageResource(R.drawable.room);
+                        }
+                    }
+                } catch (Exception e) {
+                    // If there's any error loading the image, use default image
+                    ivRoomImage.setImageResource(R.drawable.room);
+                }
+            } else {
+                // Use default room image
+                ivRoomImage.setImageResource(R.drawable.room);
+            }
         }
         
         private String getRoomDescription(String roomType) {

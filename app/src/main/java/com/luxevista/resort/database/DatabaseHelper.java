@@ -20,7 +20,8 @@ import java.util.List;
 public class DatabaseHelper extends SQLiteOpenHelper {
     
     private static final String DATABASE_NAME = "luxevista_resort.db";
-    private static final int DATABASE_VERSION = 3;
+    private static final int DATABASE_VERSION = 5; // Increment version to force database recreation
+    private Context context;
     
     // Table names
     private static final String TABLE_USERS = "users";
@@ -68,6 +69,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String COLUMN_RESERVATION_SERVICE_ID = "service_id";
     private static final String COLUMN_RESERVATION_DATE = "date";
     private static final String COLUMN_RESERVATION_STATUS = "status";
+    private static final String COLUMN_RESERVATION_CONFIRMED = "confirmed";
     
     // Offer table columns
     private static final String COLUMN_OFFER_ID = "id";
@@ -125,6 +127,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         COLUMN_RESERVATION_SERVICE_ID + " INTEGER NOT NULL," +
         COLUMN_RESERVATION_DATE + " TEXT NOT NULL," +
         COLUMN_RESERVATION_STATUS + " TEXT NOT NULL," +
+        COLUMN_RESERVATION_CONFIRMED + " INTEGER NOT NULL DEFAULT 0," +
         "FOREIGN KEY(" + COLUMN_RESERVATION_USER_ID + ") REFERENCES " + TABLE_USERS + "(" + COLUMN_USER_ID + ")," +
         "FOREIGN KEY(" + COLUMN_RESERVATION_SERVICE_ID + ") REFERENCES " + TABLE_SERVICES + "(" + COLUMN_SERVICE_ID + ")" +
         ")";
@@ -139,10 +142,15 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     
     public DatabaseHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
+        this.context = context;
+        // Force database recreation to fix the issue
+        android.util.Log.d("DatabaseHelper", "DatabaseHelper created with version " + DATABASE_VERSION);
     }
     
     @Override
     public void onCreate(SQLiteDatabase db) {
+        android.util.Log.d("DatabaseHelper", "Creating new database with version " + DATABASE_VERSION);
+        
         db.execSQL(CREATE_TABLE_USERS);
         db.execSQL(CREATE_TABLE_ROOMS);
         db.execSQL(CREATE_TABLE_SERVICES);
@@ -150,14 +158,166 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.execSQL(CREATE_TABLE_RESERVATIONS);
         db.execSQL(CREATE_TABLE_OFFERS);
         
+        android.util.Log.d("DatabaseHelper", "All tables created successfully");
+        
         // Insert default admin user
         insertDefaultAdmin(db);
         // Insert sample data
         insertSampleData(db);
+        
+        android.util.Log.d("DatabaseHelper", "Database creation completed");
+    }
+    
+    // Method to check and fix database schema
+    public void ensureDatabaseSchema() {
+        SQLiteDatabase db = this.getWritableDatabase();
+        try {
+            // Check if confirmed column exists in bookings table
+            Cursor cursor = db.rawQuery("PRAGMA table_info(" + TABLE_BOOKINGS + ")", null);
+            boolean hasConfirmedColumn = false;
+            android.util.Log.d("DatabaseHelper", "Checking bookings table schema:");
+            while (cursor.moveToNext()) {
+                String columnName = cursor.getString(1);
+                android.util.Log.d("DatabaseHelper", "Column: " + columnName);
+                if (columnName.equals(COLUMN_BOOKING_CONFIRMED)) {
+                    hasConfirmedColumn = true;
+                }
+            }
+            cursor.close();
+            
+            if (!hasConfirmedColumn) {
+                android.util.Log.d("DatabaseHelper", "Adding confirmed column to bookings table");
+                db.execSQL("ALTER TABLE " + TABLE_BOOKINGS + " ADD COLUMN " + COLUMN_BOOKING_CONFIRMED + " INTEGER NOT NULL DEFAULT 0");
+            } else {
+                android.util.Log.d("DatabaseHelper", "Confirmed column already exists in bookings table");
+                // Fix any existing bookings that might have incorrect confirmed status
+                fixExistingBookingsConfirmationStatus(db);
+            }
+            
+            // Check if confirmed column exists in reservations table
+            cursor = db.rawQuery("PRAGMA table_info(" + TABLE_RESERVATIONS + ")", null);
+            hasConfirmedColumn = false;
+            android.util.Log.d("DatabaseHelper", "Checking reservations table schema:");
+            while (cursor.moveToNext()) {
+                String columnName = cursor.getString(1);
+                android.util.Log.d("DatabaseHelper", "Column: " + columnName);
+                if (columnName.equals(COLUMN_RESERVATION_CONFIRMED)) {
+                    hasConfirmedColumn = true;
+                }
+            }
+            cursor.close();
+            
+            if (!hasConfirmedColumn) {
+                android.util.Log.d("DatabaseHelper", "Adding confirmed column to reservations table");
+                db.execSQL("ALTER TABLE " + TABLE_RESERVATIONS + " ADD COLUMN " + COLUMN_RESERVATION_CONFIRMED + " INTEGER NOT NULL DEFAULT 0");
+            } else {
+                android.util.Log.d("DatabaseHelper", "Confirmed column already exists in reservations table");
+                // Fix any existing reservations that might have incorrect confirmed status
+                fixExistingReservationsConfirmationStatus(db);
+            }
+        } catch (Exception e) {
+            android.util.Log.e("DatabaseHelper", "Error ensuring database schema: " + e.getMessage(), e);
+        } finally {
+            db.close();
+        }
+    }
+    
+    // Fix existing bookings to ensure they are unconfirmed by default
+    private void fixExistingBookingsConfirmationStatus(SQLiteDatabase db) {
+        try {
+            // Update all bookings to be unconfirmed unless they have status "confirmed"
+            ContentValues values = new ContentValues();
+            values.put(COLUMN_BOOKING_CONFIRMED, 0);
+            
+            int updated = db.update(TABLE_BOOKINGS, values, 
+                COLUMN_BOOKING_STATUS + " != ?", 
+                new String[]{"confirmed"});
+            
+            android.util.Log.d("DatabaseHelper", "Fixed " + updated + " bookings to be unconfirmed");
+            
+            // Also update bookings with "confirmed" status to be confirmed
+            values = new ContentValues();
+            values.put(COLUMN_BOOKING_CONFIRMED, 1);
+            
+            int confirmed = db.update(TABLE_BOOKINGS, values, 
+                COLUMN_BOOKING_STATUS + " = ?", 
+                new String[]{"confirmed"});
+            
+            android.util.Log.d("DatabaseHelper", "Set " + confirmed + " bookings to be confirmed");
+            
+        } catch (Exception e) {
+            android.util.Log.e("DatabaseHelper", "Error fixing booking confirmation status: " + e.getMessage(), e);
+        }
+    }
+    
+    // Fix existing reservations to ensure they are unconfirmed by default
+    private void fixExistingReservationsConfirmationStatus(SQLiteDatabase db) {
+        try {
+            // Update all reservations to be unconfirmed unless they have status "confirmed"
+            ContentValues values = new ContentValues();
+            values.put(COLUMN_RESERVATION_CONFIRMED, 0);
+            
+            int updated = db.update(TABLE_RESERVATIONS, values, 
+                COLUMN_RESERVATION_STATUS + " != ?", 
+                new String[]{"confirmed"});
+            
+            android.util.Log.d("DatabaseHelper", "Fixed " + updated + " reservations to be unconfirmed");
+            
+            // Also update reservations with "confirmed" status to be confirmed
+            values = new ContentValues();
+            values.put(COLUMN_RESERVATION_CONFIRMED, 1);
+            
+            int confirmed = db.update(TABLE_RESERVATIONS, values, 
+                COLUMN_RESERVATION_STATUS + " = ?", 
+                new String[]{"confirmed"});
+            
+            android.util.Log.d("DatabaseHelper", "Set " + confirmed + " reservations to be confirmed");
+            
+        } catch (Exception e) {
+            android.util.Log.e("DatabaseHelper", "Error fixing reservation confirmation status: " + e.getMessage(), e);
+        }
+    }
+    
+    // Method to check actual data in the database
+    public void checkDatabaseData() {
+        SQLiteDatabase db = this.getReadableDatabase();
+        try {
+            // Check bookings data
+            Cursor cursor = db.rawQuery("SELECT id, user_id, status, confirmed FROM " + TABLE_BOOKINGS, null);
+            android.util.Log.d("DatabaseHelper", "Bookings data:");
+            while (cursor.moveToNext()) {
+                int id = cursor.getInt(0);
+                int userId = cursor.getInt(1);
+                String status = cursor.getString(2);
+                int confirmed = cursor.getInt(3);
+                android.util.Log.d("DatabaseHelper", "Booking ID: " + id + ", User ID: " + userId + 
+                    ", Status: " + status + ", Confirmed: " + confirmed);
+            }
+            cursor.close();
+            
+            // Check reservations data
+            cursor = db.rawQuery("SELECT id, user_id, status, confirmed FROM " + TABLE_RESERVATIONS, null);
+            android.util.Log.d("DatabaseHelper", "Reservations data:");
+            while (cursor.moveToNext()) {
+                int id = cursor.getInt(0);
+                int userId = cursor.getInt(1);
+                String status = cursor.getString(2);
+                int confirmed = cursor.getInt(3);
+                android.util.Log.d("DatabaseHelper", "Reservation ID: " + id + ", User ID: " + userId + 
+                    ", Status: " + status + ", Confirmed: " + confirmed);
+            }
+            cursor.close();
+        } catch (Exception e) {
+            android.util.Log.e("DatabaseHelper", "Error checking database data: " + e.getMessage(), e);
+        } finally {
+            db.close();
+        }
     }
     
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+        android.util.Log.d("DatabaseHelper", "Upgrading database from version " + oldVersion + " to " + newVersion);
+        
         if (oldVersion < 2) {
             // Add new columns to existing tables
             db.execSQL("ALTER TABLE " + TABLE_ROOMS + " ADD COLUMN " + COLUMN_ROOM_DESCRIPTION + " TEXT");
@@ -167,6 +327,49 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         if (oldVersion < 3) {
             // Add confirmed column to bookings table
             db.execSQL("ALTER TABLE " + TABLE_BOOKINGS + " ADD COLUMN " + COLUMN_BOOKING_CONFIRMED + " INTEGER NOT NULL DEFAULT 0");
+        }
+        if (oldVersion < 4) {
+            // Add confirmed column to reservations table
+            db.execSQL("ALTER TABLE " + TABLE_RESERVATIONS + " ADD COLUMN " + COLUMN_RESERVATION_CONFIRMED + " INTEGER NOT NULL DEFAULT 0");
+        }
+        if (oldVersion < 5) {
+            // Force complete database recreation to fix confirmation status issues
+            android.util.Log.d("DatabaseHelper", "Forcing database recreation due to confirmation status issues");
+            recreateDatabase(db);
+        }
+    }
+    
+    // Method to recreate the database completely
+    private void recreateDatabase(SQLiteDatabase db) {
+        try {
+            // Drop all tables
+            db.execSQL("DROP TABLE IF EXISTS " + TABLE_OFFERS);
+            db.execSQL("DROP TABLE IF EXISTS " + TABLE_RESERVATIONS);
+            db.execSQL("DROP TABLE IF EXISTS " + TABLE_BOOKINGS);
+            db.execSQL("DROP TABLE IF EXISTS " + TABLE_SERVICES);
+            db.execSQL("DROP TABLE IF EXISTS " + TABLE_ROOMS);
+            db.execSQL("DROP TABLE IF EXISTS " + TABLE_USERS);
+            
+            android.util.Log.d("DatabaseHelper", "All tables dropped");
+            
+            // Recreate all tables
+            db.execSQL(CREATE_TABLE_USERS);
+            db.execSQL(CREATE_TABLE_ROOMS);
+            db.execSQL(CREATE_TABLE_SERVICES);
+            db.execSQL(CREATE_TABLE_BOOKINGS);
+            db.execSQL(CREATE_TABLE_RESERVATIONS);
+            db.execSQL(CREATE_TABLE_OFFERS);
+            
+            android.util.Log.d("DatabaseHelper", "All tables recreated");
+            
+            // Insert default data
+            insertDefaultAdmin(db);
+            insertSampleData(db);
+            
+            android.util.Log.d("DatabaseHelper", "Database recreation completed");
+            
+        } catch (Exception e) {
+            android.util.Log.e("DatabaseHelper", "Error recreating database: " + e.getMessage(), e);
         }
     }
     
@@ -264,6 +467,61 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return exists;
     }
     
+    // Method to check if specific email exists and return user details
+    public void checkEmailExists(String email) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        try {
+            Cursor cursor = db.query(TABLE_USERS, null, COLUMN_USER_EMAIL + "=?", 
+                    new String[]{email}, null, null, null);
+            
+            if (cursor.moveToFirst()) {
+                int id = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_USER_ID));
+                String name = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_USER_NAME));
+                String userEmail = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_USER_EMAIL));
+                String role = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_USER_ROLE));
+                
+                android.util.Log.d("DatabaseHelper", "Email '" + email + "' EXISTS:");
+                android.util.Log.d("DatabaseHelper", "ID: " + id);
+                android.util.Log.d("DatabaseHelper", "Name: " + name);
+                android.util.Log.d("DatabaseHelper", "Email: " + userEmail);
+                android.util.Log.d("DatabaseHelper", "Role: " + role);
+            } else {
+                android.util.Log.d("DatabaseHelper", "Email '" + email + "' does NOT exist in database");
+            }
+            cursor.close();
+        } catch (Exception e) {
+            android.util.Log.e("DatabaseHelper", "Error checking email: " + e.getMessage(), e);
+        } finally {
+            db.close();
+        }
+    }
+    
+    // Method to show all users in database
+    public void showAllUsers() {
+        SQLiteDatabase db = this.getReadableDatabase();
+        try {
+            Cursor cursor = db.query(TABLE_USERS, null, null, null, null, null, null);
+            
+            android.util.Log.d("DatabaseHelper", "=== ALL USERS IN DATABASE ===");
+            android.util.Log.d("DatabaseHelper", "Total users: " + cursor.getCount());
+            
+            while (cursor.moveToNext()) {
+                int id = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_USER_ID));
+                String name = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_USER_NAME));
+                String email = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_USER_EMAIL));
+                String role = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_USER_ROLE));
+                
+                android.util.Log.d("DatabaseHelper", "User " + id + ": " + name + " (" + email + ") - Role: " + role);
+            }
+            android.util.Log.d("DatabaseHelper", "=== END USER LIST ===");
+            cursor.close();
+        } catch (Exception e) {
+            android.util.Log.e("DatabaseHelper", "Error showing users: " + e.getMessage(), e);
+        } finally {
+            db.close();
+        }
+    }
+    
     // Room operations
     public List<Room> getAllRooms() {
         List<Room> rooms = new ArrayList<>();
@@ -321,6 +579,27 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 new String[]{String.valueOf(roomId)});
         db.close();
         return result > 0;
+    }
+    
+    public Room getRoomById(int roomId) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.query(TABLE_ROOMS, null, COLUMN_ROOM_ID + "=?", 
+                new String[]{String.valueOf(roomId)}, null, null, null);
+        
+        Room room = null;
+        if (cursor.moveToFirst()) {
+            room = new Room(
+                cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_ROOM_ID)),
+                cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_ROOM_TYPE)),
+                cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_ROOM_DESCRIPTION)),
+                cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_ROOM_IMAGE_PATH)),
+                cursor.getDouble(cursor.getColumnIndexOrThrow(COLUMN_ROOM_PRICE)),
+                cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_ROOM_AVAILABILITY))
+            );
+        }
+        cursor.close();
+        db.close();
+        return room;
     }
     
     // Service operations
@@ -382,6 +661,27 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return result > 0;
     }
     
+    public Service getServiceById(int serviceId) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.query(TABLE_SERVICES, null, COLUMN_SERVICE_ID + "=?", 
+                new String[]{String.valueOf(serviceId)}, null, null, null);
+        
+        Service service = null;
+        if (cursor.moveToFirst()) {
+            service = new Service(
+                cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_SERVICE_ID)),
+                cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_SERVICE_NAME)),
+                cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_SERVICE_DESCRIPTION)),
+                cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_SERVICE_IMAGE_PATH)),
+                cursor.getDouble(cursor.getColumnIndexOrThrow(COLUMN_SERVICE_PRICE)),
+                cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_SERVICE_AVAILABILITY))
+            );
+        }
+        cursor.close();
+        db.close();
+        return service;
+    }
+    
     // Booking operations
     public boolean addBooking(Booking booking) {
         SQLiteDatabase db = this.getWritableDatabase();
@@ -393,7 +693,19 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         values.put(COLUMN_BOOKING_STATUS, booking.getStatus());
         values.put(COLUMN_BOOKING_CONFIRMED, booking.isConfirmed() ? 1 : 0);
         
+        // Debug logging
+        android.util.Log.d("DatabaseHelper", "Adding booking - Status: " + booking.getStatus() + 
+            ", Confirmed: " + booking.isConfirmed() + 
+            ", Confirmed value in DB: " + (booking.isConfirmed() ? 1 : 0));
+        
         long result = db.insert(TABLE_BOOKINGS, null, values);
+        
+        if (result != -1) {
+            android.util.Log.d("DatabaseHelper", "Booking added successfully with ID: " + result);
+        } else {
+            android.util.Log.e("DatabaseHelper", "Failed to add booking");
+        }
+        
         db.close();
         return result != -1;
     }
@@ -405,6 +717,13 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 new String[]{String.valueOf(userId)}, null, null, null);
         
         while (cursor.moveToNext()) {
+            int confirmedValue = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_BOOKING_CONFIRMED));
+            boolean isConfirmed = confirmedValue == 1;
+            
+            // Debug logging
+            android.util.Log.d("DatabaseHelper", "Reading booking - ID: " + cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_BOOKING_ID)) + 
+                ", Confirmed value: " + confirmedValue + ", Is confirmed: " + isConfirmed);
+            
             Booking booking = new Booking(
                 cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_BOOKING_ID)),
                 cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_BOOKING_USER_ID)),
@@ -412,7 +731,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_BOOKING_CHECKIN_DATE)),
                 cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_BOOKING_CHECKOUT_DATE)),
                 cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_BOOKING_STATUS)),
-                cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_BOOKING_CONFIRMED)) == 1
+                isConfirmed
             );
             bookings.add(booking);
         }
@@ -463,9 +782,13 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
         values.put(COLUMN_BOOKING_CONFIRMED, 1);
+        values.put(COLUMN_BOOKING_STATUS, "confirmed"); // Update status to confirmed as well
         
         int result = db.update(TABLE_BOOKINGS, values, COLUMN_BOOKING_ID + "=?", 
                 new String[]{String.valueOf(bookingId)});
+        
+        android.util.Log.d("DatabaseHelper", "Confirming booking ID: " + bookingId + ", Result: " + result);
+        
         db.close();
         return result > 0;
     }
@@ -486,8 +809,21 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         values.put(COLUMN_RESERVATION_SERVICE_ID, reservation.getServiceId());
         values.put(COLUMN_RESERVATION_DATE, reservation.getDate());
         values.put(COLUMN_RESERVATION_STATUS, reservation.getStatus());
+        values.put(COLUMN_RESERVATION_CONFIRMED, reservation.isConfirmed() ? 1 : 0);
+        
+        // Debug logging
+        android.util.Log.d("DatabaseHelper", "Adding reservation - Status: " + reservation.getStatus() + 
+            ", Confirmed: " + reservation.isConfirmed() + 
+            ", Confirmed value in DB: " + (reservation.isConfirmed() ? 1 : 0));
         
         long result = db.insert(TABLE_RESERVATIONS, null, values);
+        
+        if (result != -1) {
+            android.util.Log.d("DatabaseHelper", "Reservation added successfully with ID: " + result);
+        } else {
+            android.util.Log.e("DatabaseHelper", "Failed to add reservation");
+        }
+        
         db.close();
         return result != -1;
     }
@@ -499,18 +835,81 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 new String[]{String.valueOf(userId)}, null, null, null);
         
         while (cursor.moveToNext()) {
+            int confirmedValue = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_RESERVATION_CONFIRMED));
+            boolean isConfirmed = confirmedValue == 1;
+            
+            // Debug logging
+            android.util.Log.d("DatabaseHelper", "Reading reservation - ID: " + cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_RESERVATION_ID)) + 
+                ", Confirmed value: " + confirmedValue + ", Is confirmed: " + isConfirmed);
+            
             Reservation reservation = new Reservation(
                 cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_RESERVATION_ID)),
                 cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_RESERVATION_USER_ID)),
                 cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_RESERVATION_SERVICE_ID)),
                 cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_RESERVATION_DATE)),
-                cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_RESERVATION_STATUS))
+                cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_RESERVATION_STATUS)),
+                isConfirmed
             );
             reservations.add(reservation);
         }
         cursor.close();
         db.close();
         return reservations;
+    }
+    
+    public List<Reservation> getAllReservations() {
+        List<Reservation> reservations = new ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.query(TABLE_RESERVATIONS, null, null, null, null, null, null);
+        
+        while (cursor.moveToNext()) {
+            Reservation reservation = new Reservation(
+                cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_RESERVATION_ID)),
+                cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_RESERVATION_USER_ID)),
+                cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_RESERVATION_SERVICE_ID)),
+                cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_RESERVATION_DATE)),
+                cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_RESERVATION_STATUS)),
+                cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_RESERVATION_CONFIRMED)) == 1
+            );
+            reservations.add(reservation);
+        }
+        cursor.close();
+        db.close();
+        return reservations;
+    }
+    
+    public boolean updateReservation(Reservation reservation) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(COLUMN_RESERVATION_USER_ID, reservation.getUserId());
+        values.put(COLUMN_RESERVATION_SERVICE_ID, reservation.getServiceId());
+        values.put(COLUMN_RESERVATION_DATE, reservation.getDate());
+        values.put(COLUMN_RESERVATION_STATUS, reservation.getStatus());
+        values.put(COLUMN_RESERVATION_CONFIRMED, reservation.isConfirmed() ? 1 : 0);
+        
+        int result = db.update(TABLE_RESERVATIONS, values, COLUMN_RESERVATION_ID + "=?", 
+                new String[]{String.valueOf(reservation.getId())});
+        db.close();
+        return result > 0;
+    }
+    
+    public boolean confirmReservation(int reservationId) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(COLUMN_RESERVATION_CONFIRMED, 1);
+        
+        int result = db.update(TABLE_RESERVATIONS, values, COLUMN_RESERVATION_ID + "=?", 
+                new String[]{String.valueOf(reservationId)});
+        db.close();
+        return result > 0;
+    }
+    
+    public boolean deleteReservation(int reservationId) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        int result = db.delete(TABLE_RESERVATIONS, COLUMN_RESERVATION_ID + "=?", 
+                new String[]{String.valueOf(reservationId)});
+        db.close();
+        return result > 0;
     }
     
     // Offer operations
@@ -564,5 +963,152 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 new String[]{String.valueOf(offerId)});
         db.close();
         return result > 0;
+    }
+    
+    // Method to fix pending bookings that are incorrectly marked as confirmed
+    public void fixPendingBookingsConfirmationStatus() {
+        SQLiteDatabase db = this.getWritableDatabase();
+        try {
+            ContentValues values = new ContentValues();
+            values.put(COLUMN_BOOKING_CONFIRMED, 0);
+            
+            // Fix bookings with "pending" status that are marked as confirmed
+            int updated = db.update(TABLE_BOOKINGS, values, 
+                COLUMN_BOOKING_STATUS + " = ? AND " + COLUMN_BOOKING_CONFIRMED + " = ?", 
+                new String[]{"pending", "1"});
+            
+            android.util.Log.d("DatabaseHelper", "Fixed " + updated + " pending bookings that were incorrectly marked as confirmed");
+            
+        } catch (Exception e) {
+            android.util.Log.e("DatabaseHelper", "Error fixing pending bookings: " + e.getMessage(), e);
+        } finally {
+            db.close();
+        }
+    }
+    
+    // Method to fix pending reservations that are incorrectly marked as confirmed
+    public void fixPendingReservationsConfirmationStatus() {
+        SQLiteDatabase db = this.getWritableDatabase();
+        try {
+            ContentValues values = new ContentValues();
+            values.put(COLUMN_RESERVATION_CONFIRMED, 0);
+            
+            // Fix reservations with "pending" status that are marked as confirmed
+            int updated = db.update(TABLE_RESERVATIONS, values, 
+                COLUMN_RESERVATION_STATUS + " = ? AND " + COLUMN_RESERVATION_CONFIRMED + " = ?", 
+                new String[]{"pending", "1"});
+            
+            android.util.Log.d("DatabaseHelper", "Fixed " + updated + " pending reservations that were incorrectly marked as confirmed");
+            
+        } catch (Exception e) {
+            android.util.Log.e("DatabaseHelper", "Error fixing pending reservations: " + e.getMessage(), e);
+        } finally {
+            db.close();
+        }
+    }
+    
+    // Method to reset all bookings to unconfirmed status (for debugging/fixing)
+    public void resetAllBookingsToUnconfirmed() {
+        SQLiteDatabase db = this.getWritableDatabase();
+        try {
+            ContentValues values = new ContentValues();
+            values.put(COLUMN_BOOKING_CONFIRMED, 0);
+            
+            int updated = db.update(TABLE_BOOKINGS, values, null, null);
+            android.util.Log.d("DatabaseHelper", "Reset " + updated + " bookings to unconfirmed status");
+            
+        } catch (Exception e) {
+            android.util.Log.e("DatabaseHelper", "Error resetting bookings: " + e.getMessage(), e);
+        } finally {
+            db.close();
+        }
+    }
+    
+    // Method to reset all reservations to unconfirmed status (for debugging/fixing)
+    public void resetAllReservationsToUnconfirmed() {
+        SQLiteDatabase db = this.getWritableDatabase();
+        try {
+            ContentValues values = new ContentValues();
+            values.put(COLUMN_RESERVATION_CONFIRMED, 0);
+            
+            int updated = db.update(TABLE_RESERVATIONS, values, null, null);
+            android.util.Log.d("DatabaseHelper", "Reset " + updated + " reservations to unconfirmed status");
+            
+        } catch (Exception e) {
+            android.util.Log.e("DatabaseHelper", "Error resetting reservations: " + e.getMessage(), e);
+        } finally {
+            db.close();
+        }
+    }
+    
+    // Method to completely reset the database (nuclear option)
+    public void completelyResetDatabase() {
+        try {
+            android.util.Log.d("DatabaseHelper", "Completely resetting database");
+            
+            // Close any open connections
+            SQLiteDatabase db = this.getWritableDatabase();
+            db.close();
+            
+            // Delete the database file
+            boolean deleted = context.deleteDatabase(DATABASE_NAME);
+            android.util.Log.d("DatabaseHelper", "Database file deleted: " + deleted);
+            
+            // Force recreation by getting a new instance
+            db = this.getWritableDatabase();
+            db.close();
+            
+            android.util.Log.d("DatabaseHelper", "Database completely reset and recreated");
+            
+        } catch (Exception e) {
+            android.util.Log.e("DatabaseHelper", "Error completely resetting database: " + e.getMessage(), e);
+        }
+    }
+    
+    // Method to clean up test bookings (remove bookings with test dates)
+    public void cleanupTestBookings() {
+        SQLiteDatabase db = this.getWritableDatabase();
+        try {
+            // Remove bookings with test dates (2024-12-25, 2024-12-27, etc.)
+            String[] testDates = {"2024-12-25", "2024-12-27", "2024-01-01", "2024-01-03"};
+            
+            for (String testDate : testDates) {
+                int deleted = db.delete(TABLE_BOOKINGS, 
+                    COLUMN_BOOKING_CHECKIN_DATE + " = ? OR " + COLUMN_BOOKING_CHECKOUT_DATE + " = ?", 
+                    new String[]{testDate, testDate});
+                
+                if (deleted > 0) {
+                    android.util.Log.d("DatabaseHelper", "Removed " + deleted + " test bookings with date: " + testDate);
+                }
+            }
+            
+        } catch (Exception e) {
+            android.util.Log.e("DatabaseHelper", "Error cleaning up test bookings: " + e.getMessage(), e);
+        } finally {
+            db.close();
+        }
+    }
+    
+    // Method to fix inconsistent booking statuses
+    public void fixInconsistentBookingStatuses() {
+        SQLiteDatabase db = this.getWritableDatabase();
+        try {
+            // Fix bookings that are confirmed but have wrong status
+            ContentValues values = new ContentValues();
+            values.put(COLUMN_BOOKING_STATUS, "confirmed");
+            
+            int updated = db.update(TABLE_BOOKINGS, values, 
+                COLUMN_BOOKING_CONFIRMED + " = ? AND " + COLUMN_BOOKING_STATUS + " != ?", 
+                new String[]{"1", "confirmed"});
+            
+            if (updated > 0) {
+                android.util.Log.d("DatabaseHelper", "Fixed " + updated + " bookings with inconsistent status");
+            }
+            
+        } catch (Exception e) {
+            android.util.Log.e("DatabaseHelper", "Error fixing booking statuses: " + e.getMessage(), e);
+        } finally {
+            db.close();
+        }
     }
 }

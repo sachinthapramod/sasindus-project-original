@@ -77,6 +77,19 @@
             android:textStyle="bold"
             android:layout_marginBottom="16dp" />
 
+        <!-- No Bookings Message -->
+        <TextView
+            android:id="@+id/tvNoBookings"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:text="No bookings found.\n\nYour booking history will appear here once you make reservations."
+            android:textSize="16sp"
+            android:textColor="@color/text_secondary"
+            android:gravity="center"
+            android:padding="32dp"
+            android:visibility="gone" />
+
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recyclerViewBookings"
             android:layout_width="match_parent"

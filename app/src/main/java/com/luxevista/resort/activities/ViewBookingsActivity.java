@@ -80,8 +80,8 @@ public class ViewBookingsActivity extends AppCompatActivity implements AdminBook
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         if (databaseHelper.confirmBooking(booking.getId())) {
-                            Toast.makeText(ViewBookingsActivity.this, "Booking confirmed successfully", Toast.LENGTH_SHORT).show();
-                            loadAllBookings();
+                            Toast.makeText(ViewBookingsActivity.this, "Booking confirmed successfully! User will see the updated status in their profile.", Toast.LENGTH_LONG).show();
+                            loadAllBookings(); // Refresh the admin view
                         } else {
                             Toast.makeText(ViewBookingsActivity.this, "Failed to confirm booking", Toast.LENGTH_SHORT).show();
                         }

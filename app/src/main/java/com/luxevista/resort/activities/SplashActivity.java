@@ -34,13 +34,13 @@ public class SplashActivity extends AppCompatActivity {
     private void navigateToNextActivity() {
         // Check if user is already logged in
         boolean isLoggedIn = sharedPreferences.getBoolean("is_logged_in", false);
-        String userType = sharedPreferences.getString("user_type", "");
+        String userRole = sharedPreferences.getString("user_role", "");
 
         Intent intent;
         
         if (isLoggedIn) {
             // User is logged in, navigate to appropriate dashboard
-            if ("admin".equals(userType)) {
+            if ("admin".equals(userRole)) {
                 intent = new Intent(SplashActivity.this, AdminDashboardActivity.class);
             } else {
                 intent = new Intent(SplashActivity.this, GuestDashboardActivity.class);

@@ -47,7 +47,6 @@
     
     <!-- Profile -->
     <string name="my_profile_title">My Profile</string>
-    <string name="my_bookings">My Bookings</string>
     
     <!-- Admin Management -->
     <string name="manage_rooms_title">Manage Rooms</string>

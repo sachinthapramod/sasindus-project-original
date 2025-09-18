@@ -15,4 +15,6 @@
     <color name="success_color">#4CAF50</color>
     <color name="error_color">#F44336</color>
     <color name="warning_color">#FF9800</color>
+    <color name="text_secondary">#8A8F9F</color>
+    <color name="holo_orange_dark">#FF8C00</color>
 </resources>

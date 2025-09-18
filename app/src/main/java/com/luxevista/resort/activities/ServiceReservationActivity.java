@@ -124,10 +124,18 @@ public class ServiceReservationActivity extends AppCompatActivity {
             }
             
             int userId = sharedPreferences.getInt("user_id", -1);
-            Reservation reservation = new Reservation(userId, selectedService.getId(), reservationDate, "confirmed");
+            Reservation reservation = new Reservation(userId, selectedService.getId(), reservationDate, "pending");
+            // Explicitly ensure the reservation is not confirmed
+            reservation.setConfirmed(false);
+            
+            // Debug: Log reservation details before saving
+            android.util.Log.d("ServiceReservationActivity", "Creating reservation - User ID: " + userId + 
+                ", Service ID: " + selectedService.getId() + 
+                ", Status: " + reservation.getStatus() + 
+                ", Confirmed: " + reservation.isConfirmed());
             
             if (databaseHelper.addReservation(reservation)) {
-                Toast.makeText(this, "Service reserved successfully!", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Service reserved successfully! Status: Pending Admin Approval", Toast.LENGTH_LONG).show();
                 finish();
             } else {
                 Toast.makeText(this, "Reservation failed. Please try again.", Toast.LENGTH_SHORT).show();
@@ -175,7 +183,7 @@ public class ServiceReservationActivity extends AppCompatActivity {
         
         if (okButton != null) {
             okButton.setBackgroundResource(R.drawable.calendar_button_ok);
-            okButton.setTextColor(getResources().getColor(android.R.color.white));
+            okButton.setTextColor(getResources().getColor(android.R.color.white, null));
             okButton.setTextSize(16);
             okButton.setTypeface(null, android.graphics.Typeface.BOLD);
             okButton.setPadding(48, 24, 48, 24);
@@ -183,7 +191,7 @@ public class ServiceReservationActivity extends AppCompatActivity {
         
         if (cancelButton != null) {
             cancelButton.setBackgroundResource(R.drawable.calendar_button_cancel);
-            cancelButton.setTextColor(getResources().getColor(R.color.primary_color));
+            cancelButton.setTextColor(getResources().getColor(R.color.primary_color, null));
             cancelButton.setTextSize(16);
             cancelButton.setTypeface(null, android.graphics.Typeface.BOLD);
             cancelButton.setPadding(48, 24, 48, 24);

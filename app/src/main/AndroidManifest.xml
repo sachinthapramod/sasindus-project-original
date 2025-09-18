@@ -72,7 +72,7 @@
             android:exported="false" />
             
         <activity
-            android:name=".activities.MyBookingsActivity"
+            android:name=".activities.ViewReservationsActivity"
             android:exported="false" />
 
     </application>

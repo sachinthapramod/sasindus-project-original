@@ -137,10 +137,13 @@ public class RoomBookingActivity extends AppCompatActivity {
             }
             
             int userId = sharedPreferences.getInt("user_id", -1);
-            Booking booking = new Booking(userId, selectedRoom.getId(), checkinDate, checkoutDate, "confirmed");
+            
+            Booking booking = new Booking(userId, selectedRoom.getId(), checkinDate, checkoutDate, "pending");
+            // Explicitly ensure the booking is not confirmed
+            booking.setConfirmed(false);
             
             if (databaseHelper.addBooking(booking)) {
-                Toast.makeText(this, "Room booked successfully!", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Room booked successfully! Status: Pending Admin Approval", Toast.LENGTH_LONG).show();
                 finish();
             } else {
                 Toast.makeText(this, "Booking failed. Please try again.", Toast.LENGTH_SHORT).show();
@@ -203,7 +206,7 @@ public class RoomBookingActivity extends AppCompatActivity {
         
         if (okButton != null) {
             okButton.setBackgroundResource(R.drawable.calendar_button_ok);
-            okButton.setTextColor(getResources().getColor(android.R.color.white));
+            okButton.setTextColor(getResources().getColor(android.R.color.white, null));
             okButton.setTextSize(16);
             okButton.setTypeface(null, android.graphics.Typeface.BOLD);
             okButton.setPadding(48, 24, 48, 24);
@@ -211,7 +214,7 @@ public class RoomBookingActivity extends AppCompatActivity {
         
         if (cancelButton != null) {
             cancelButton.setBackgroundResource(R.drawable.calendar_button_cancel);
-            cancelButton.setTextColor(getResources().getColor(R.color.primary_color));
+            cancelButton.setTextColor(getResources().getColor(R.color.primary_color, null));
             cancelButton.setTextSize(16);
             cancelButton.setTypeface(null, android.graphics.Typeface.BOLD);
             cancelButton.setPadding(48, 24, 48, 24);

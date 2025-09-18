@@ -6,15 +6,17 @@ public class Reservation {
     private int serviceId;
     private String date;
     private String status;
+    private boolean confirmed;
     
     public Reservation() {}
     
-    public Reservation(int id, int userId, int serviceId, String date, String status) {
+    public Reservation(int id, int userId, int serviceId, String date, String status, boolean confirmed) {
         this.id = id;
         this.userId = userId;
         this.serviceId = serviceId;
         this.date = date;
         this.status = status;
+        this.confirmed = confirmed;
     }
     
     public Reservation(int userId, int serviceId, String date, String status) {
@@ -22,6 +24,7 @@ public class Reservation {
         this.serviceId = serviceId;
         this.date = date;
         this.status = status;
+        this.confirmed = false; // Default to unconfirmed
     }
     
     // Getters and Setters
@@ -63,5 +66,13 @@ public class Reservation {
     
     public void setStatus(String status) {
         this.status = status;
+    }
+    
+    public boolean isConfirmed() {
+        return confirmed;
+    }
+    
+    public void setConfirmed(boolean confirmed) {
+        this.confirmed = confirmed;
     }
 }
